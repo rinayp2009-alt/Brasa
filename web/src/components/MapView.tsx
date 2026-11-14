@@ -10,8 +10,6 @@ import { useStore } from '../store'
 
 // NASA GIBS: VIIRS Black Marble night lights as the basemap
 const GIBS = 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/VIIRS_Black_Marble/default/2016-01-01/GoogleMapsCompatible_Level8/{z}/{y}/{x}.png'
-// NASA GIBS reference layer: coastlines and country borders
-const BORDERS = 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/Reference_Features_15m/default/GoogleMapsCompatible_Level13/{z}/{y}/{x}.png'
 
 const INITIAL_VIEW = { longitude: -64.5, latitude: -38.5, zoom: 3.4, pitch: 0, bearing: 0 }
 
@@ -62,7 +60,6 @@ export default function MapView({ ds, bbox }: Props) {
 
   const layers = [
     rasterLayer('basemap', GIBS, 8),
-    rasterLayer('borders', BORDERS, 9, 0.5),
     new H3HexagonLayer<Hex>({
       id: 'fire',
       data: hexes,
@@ -121,7 +118,7 @@ export default function MapView({ ds, bbox }: Props) {
         </div>
       )}
       <div className="pointer-events-none absolute bottom-2 right-3 text-[10px] text-muted">
-        Basemap: NASA GIBS VIIRS Black Marble · Borders: NASA GIBS
+        Basemap: NASA GIBS VIIRS Black Marble
       </div>
     </div>
   )
