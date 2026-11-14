@@ -20,7 +20,8 @@ function annual(months: string[], v: number[]) {
 }
 
 export default function AnnualChart({ months, modis, naive, harm, lo, hi, mode }: Props) {
-  const { monthIdx, setMonth, setPlaying } = useStore()
+  const { monthIdx, setMonth, setPlaying, lang } = useStore()
+  const es = lang === 'es'
   const years = Array.from(annual(months, harm).keys()).filter((y) => y >= 2001)
   const A = { modis: annual(months, modis), naive: annual(months, naive), harm: annual(months, harm), lo: annual(months, lo), hi: annual(months, hi) }
   const selYear = months[monthIdx] ? ym(months[monthIdx]).y : null
@@ -29,14 +30,14 @@ export default function AnnualChart({ months, modis, naive, harm, lo, hi, mode }
   const series: object[] = []
   if (mode === 'naive') {
     series.push({ name: 'MODIS', type: 'bar', stack: 'a', data: years.map((y) => ({ value: Math.round(A.modis.get(y)!), itemStyle: { color: barColor(y, '#6E9BF2') } })) })
-    series.push({ name: 'Extra from VIIRS', type: 'bar', stack: 'a', data: years.map((y) => ({ value: Math.round(A.naive.get(y)! - A.modis.get(y)!), itemStyle: { color: barColor(y, '#FF8A3D'), borderRadius: [3, 3, 0, 0] } })) })
+    series.push({ name: es ? 'Extra de VIIRS' : 'Extra from VIIRS', type: 'bar', stack: 'a', data: years.map((y) => ({ value: Math.round(A.naive.get(y)! - A.modis.get(y)!), itemStyle: { color: barColor(y, '#FF8A3D'), borderRadius: [3, 3, 0, 0] } })) })
   } else if (mode === 'modis') {
-    series.push({ name: 'MODIS only', type: 'bar', data: years.map((y) => ({ value: Math.round(A.modis.get(y)!), itemStyle: { color: barColor(y, '#6E9BF2'), borderRadius: [3, 3, 0, 0] } })) })
+    series.push({ name: es ? 'Solo MODIS' : 'MODIS only', type: 'bar', data: years.map((y) => ({ value: Math.round(A.modis.get(y)!), itemStyle: { color: barColor(y, '#6E9BF2'), borderRadius: [3, 3, 0, 0] } })) })
   } else {
-    series.push({ name: 'Harmonized', type: 'bar', data: years.map((y) => ({ value: Math.round(A.harm.get(y)!), itemStyle: { color: barColor(y, y < 2012 ? '#E0742F' : '#FF8A3D'), borderRadius: [3, 3, 0, 0] } })) })
+    series.push({ name: es ? 'Armonizado' : 'Harmonized', type: 'bar', data: years.map((y) => ({ value: Math.round(A.harm.get(y)!), itemStyle: { color: barColor(y, y < 2012 ? '#E0742F' : '#FF8A3D'), borderRadius: [3, 3, 0, 0] } })) })
     // 90% uncertainty whiskers on years estimated from MODIS
     series.push({
-      name: '90% range', type: 'custom', silent: true, z: 5,
+      name: es ? 'Rango 90%' : '90% range', type: 'custom', silent: true, z: 5,
       renderItem: (_: unknown, api: { value: (i: number) => number; coord: (p: number[]) => number[] }) => {
         const x = api.value(0), l = api.value(1), h = api.value(2)
         if (l === h) return null
@@ -52,8 +53,8 @@ export default function AnnualChart({ months, modis, naive, harm, lo, hi, mode }
   }
 
   const marks = mode === 'harm' ? [] : [
-    { xAxis: String(2012), label: { formatter: 'VIIRS joins', color: '#C4C7CD' } },
-    { xAxis: String(2018), label: { formatter: 'NOAA-20 joins', color: '#C4C7CD' } },
+    { xAxis: String(2012), label: { formatter: es ? 'llega VIIRS' : 'VIIRS joins', color: '#C4C7CD' } },
+    { xAxis: String(2018), label: { formatter: es ? 'llega NOAA-20' : 'NOAA-20 joins', color: '#C4C7CD' } },
   ]
   if (series[0]) (series[0] as Record<string, unknown>).markLine = {
     silent: true, symbol: 'none', lineStyle: { color: '#6B7280', type: 'dashed' },

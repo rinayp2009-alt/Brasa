@@ -24,6 +24,7 @@ type Hex = { hex: string; v: number; inRegion: boolean; lc: number }
 // cropland, forest, grass/shrub/wetland, other
 const LAND_RGB: [number, number, number][] = [[232, 197, 71], [63, 174, 120], [255, 138, 61], [120, 124, 132]]
 const LAND_NAMES = ['mostly cropland', 'mostly forest', 'mostly grass/shrub/wetland', 'other land']
+const LAND_NAMES_ES = ['sobre todo cultivos', 'sobre todo bosque', 'sobre todo pastizal/arbustal/humedal', 'otro']
 
 function rasterLayer(id: string, url: string, maxZoom: number, opacity = 1) {
   return new TileLayer({
@@ -99,7 +100,7 @@ export default function MapView({ ds, bbox }: Props) {
       stroked: false,
       pickable: true,
       updateTriggers: { getFillColor: [bbox, mode, colorBy], getElevation: [mode] },
-      onHover: (info: PickingInfo<Hex>) => setHover(info.object ? { x: info.x, y: info.y, text: `${fmt(info.object.v)} burning days · ${LAND_NAMES[info.object.lc]}` } : null),
+      onHover: (info: PickingInfo<Hex>) => setHover(info.object ? { x: info.x, y: info.y, text: useStore.getState().lang === 'es' ? `${fmt(info.object.v)} días de quema · ${LAND_NAMES_ES[info.object.lc]}` : `${fmt(info.object.v)} burning days · ${LAND_NAMES[info.object.lc]}` } : null),
     }),
     showLive && live?.cellDays && new H3HexagonLayer<{ hex: string; n: number }>({
       id: 'live',
@@ -110,7 +111,7 @@ export default function MapView({ ds, bbox }: Props) {
       getLineColor: [255, 224, 138, 255],
       lineWidthMinPixels: 1,
       pickable: true,
-      onHover: (info: PickingInfo<{ hex: string; n: number }>) => setHover(info.object ? { x: info.x, y: info.y, text: `LIVE · burning ${info.object.n} of the last ${live.days} days` } : null),
+      onHover: (info: PickingInfo<{ hex: string; n: number }>) => setHover(info.object ? { x: info.x, y: info.y, text: useStore.getState().lang === 'es' ? `EN VIVO · ardiendo ${info.object.n} de los últimos ${live.days} días` : `LIVE · burning ${info.object.n} of the last ${live.days} days` } : null),
     }),
     bbox && new PolygonLayer({
       id: 'region',
@@ -148,7 +149,7 @@ export default function MapView({ ds, bbox }: Props) {
       )}
       {drawing && (
         <div className="absolute left-3 top-3 rounded-lg border border-glow/50 bg-ink/90 px-3 py-2 text-sm text-glow">
-          {draftCorner ? 'Now click the opposite corner' : 'Click one corner of your area'}
+          {useStore.getState().lang === 'es' ? (draftCorner ? 'Ahora tocá la esquina opuesta' : 'Tocá una esquina de tu zona') : (draftCorner ? 'Now click the opposite corner' : 'Click one corner of your area')}
         </div>
       )}
       <div className="pointer-events-none absolute bottom-2 right-3 text-[10px] text-muted">

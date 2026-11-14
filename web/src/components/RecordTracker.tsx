@@ -4,6 +4,8 @@ import { cellToLatLng } from 'h3-js'
 import type { BBox } from '../data'
 import { MONTH_NAMES, fmt, inBox, ym } from '../data'
 import InfoTip from './InfoTip'
+import { useT } from '../i18n'
+import { useStore } from '../store'
 
 interface Ytd {
   ok: boolean
@@ -23,6 +25,7 @@ interface Props {
 let cache: Promise<Ytd> | null = null
 const loadYtd = () => (cache ||= fetch('/api/ytd').then((r) => r.json()).catch(() => ({ ok: false, error: 'offline' })))
 
+const FULL_ES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
 const FULL = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 
 /** cumulative value at fractional month x (0..12) from 12 monthly values */
@@ -36,6 +39,8 @@ function cumAt(vals: number[], x: number) {
 }
 
 export default function RecordTracker({ months, harm, bbox, regionName }: Props) {
+  const t = useT()
+  const es = useStore((s) => s.lang) === 'es'
   const [ytd, setYtd] = useState<Ytd | null>(null)
   useEffect(() => { loadYtd().then(setYtd) }, [])
 
@@ -110,7 +115,9 @@ export default function RecordTracker({ months, harm, bbox, regionName }: Props)
     tooltip: {
       trigger: 'item', backgroundColor: '#0B0D10', borderColor: '#232832',
       textStyle: { color: '#E8E6E1', fontFamily: 'IBM Plex Mono', fontSize: 12 },
-      formatter: (p: { seriesName: string; data: number[] }) => `${p.seriesName}<br/>${fmt(p.data[1])} burning days by ${p.data[0] >= 12 ? 'year end' : `end of ${MONTH_NAMES[Math.max(0, Math.ceil(p.data[0]) - 1)]}`}`,
+      formatter: (p: { seriesName: string; data: number[] }) => es
+        ? `${p.seriesName}<br/>${fmt(p.data[1])} días de quema ${p.data[0] >= 12 ? 'al fin del año' : `a fin de ${MONTH_NAMES[Math.max(0, Math.ceil(p.data[0]) - 1)]}`}`
+        : `${p.seriesName}<br/>${fmt(p.data[1])} burning days by ${p.data[0] >= 12 ? 'year end' : `end of ${MONTH_NAMES[Math.max(0, Math.ceil(p.data[0]) - 1)]}`}`,
     },
     xAxis: {
       type: 'value', min: 0, max: 12, interval: 1, splitLine: { lineStyle: { color: '#1B1F27' } },
@@ -121,47 +128,48 @@ export default function RecordTracker({ months, harm, bbox, regionName }: Props)
     series,
   }
 
-  const ord = (n: number) => (n === 1 ? 'the highest' : `#${n}`)
+  const ord = (n: number) => (n === 1 ? t('the highest') : `#${n}`)
   const tone = stats && stats.rank <= 3 ? 'text-glow' : stats && stats.rank <= 8 ? 'text-fire-soft' : 'text-text'
   const verdict = !stats ? null
-    : stats.projRank <= 3 ? 'On track for one of the worst years on record'
-    : stats.projRank <= 8 ? 'On track for an above-normal year'
-    : stats.projRank >= 20 ? 'On track for a quieter-than-normal year'
-    : 'On track for a fairly typical year'
+    : stats.projRank <= 3 ? t('On track for one of the worst years on record')
+    : stats.projRank <= 8 ? t('On track for an above-normal year')
+    : stats.projRank >= 20 ? t('On track for a quieter-than-normal year')
+    : t('On track for a fairly typical year')
 
   return (
     <section className="panel flex flex-col gap-3 p-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="flex items-center font-display text-base font-semibold">Is this year heading for a record? · {regionName}<InfoTip text="Each grey line is one year from 2001 to 2025, adding up its burning month by month. The bright orange line is this year, built from NASA's latest VIIRS NOAA-20 data. If orange is near the top, this year is running hot. 2020 is shown in blue for reference." /></h2>
-        <span className="font-mono text-[11px] text-muted">running total of burning days · grey = 2001–2025 · <span className="text-[#9CC0FF]">blue = 2020</span></span>
+        <h2 className="flex items-center font-display text-base font-semibold">{t('Is this year heading for a record?')} · {regionName}<InfoTip text={t("Each grey line is one year from 2001 to 2025, adding up its burning month by month. The bright orange line is this year, built from NASA's latest VIIRS NOAA-20 data. If orange is near the top, this year is running hot. 2020 is shown in blue for reference.")} /></h2>
+        <span className="font-mono text-[11px] text-muted">{t('running total of burning days · grey = 2001–2025 ·')} <span className="text-[#9CC0FF]">{t('blue = 2020')}</span></span>
       </div>
 
       {stats && live ? (
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-lg bg-[#1B1F27] px-4 py-3">
           <div className="flex flex-col">
-            <span className="label">{live.year} so far (to {live.to})</span>
-            <span className="font-display text-2xl font-bold">{fmt(stats.now)} <span className="text-sm font-normal text-muted">burning days</span></span>
+            <span className="label">{es ? `${live.year} hasta ahora (al ${live.to})` : `${live.year} so far (to ${live.to})`}</span>
+            <span className="font-display text-2xl font-bold">{fmt(stats.now)} <span className="text-sm font-normal text-muted">{t('burning days')}</span></span>
           </div>
           <div className="flex flex-col">
-            <span className="label">vs the same date in past years</span>
-            <span className={`font-display text-2xl font-bold ${tone}`}>{ord(stats.rank)} <span className="text-sm font-normal text-muted">of {stats.of} years</span></span>
+            <span className="label">{t('vs the same date in past years')}</span>
+            <span className={`font-display text-2xl font-bold ${tone}`}>{ord(stats.rank)} <span className="text-sm font-normal text-muted">{es ? 'de' : 'of'} {stats.of} {es ? 'años' : 'years'}</span></span>
           </div>
           <div className="flex flex-col">
-            <span className="label">Projected full year</span>
+            <span className="label">{t('Projected full year')}</span>
             <span className="font-display text-2xl font-bold">{fmt(stats.proj.mid)} <span className="text-sm font-normal text-muted">({fmt(stats.proj.lo)}–{fmt(stats.proj.hi)})</span></span>
           </div>
           <span className={`rounded-full px-3 py-1.5 text-sm font-semibold ${stats.projRank <= 3 ? 'bg-glow text-ink' : stats.projRank <= 8 ? 'bg-[#2A1A0E] text-fire-soft' : 'bg-[#121B2C] text-[#9CC0FF]'}`}>{verdict}</span>
         </div>
       ) : (
         <p className="rounded-lg bg-[#1B1F27] px-4 py-3 text-sm text-muted">
-          {!ytd ? 'Fetching this year’s NASA fire data so far…' : `This year’s live data is unavailable right now, so ${latestYear} is highlighted instead.`}
+          {!ytd ? t('Fetching this year’s NASA fire data so far…') : es ? `Los datos en vivo de este año no están disponibles ahora; se resalta ${latestYear}.` : `This year’s live data is unavailable right now, so ${latestYear} is highlighted instead.`}
         </p>
       )}
 
       <ReactECharts option={option} notMerge style={{ height: 300, width: '100%' }} />
       <p className="text-[11px] text-muted">
-        {live ? `${live.year}: NASA FIRMS VIIRS NOAA-20 (science-quality archive, then near-real-time), same cleaning and gas-flare filter as the 25-year record. ` : ''}
-        Projection adds what usually burns after {live ? `${FULL[live.mo]} ${new Date(`${live.to}T12:00:00Z`).getUTCDate()}` : 'this date'}, using the middle half of past years as the range. It is a guide, not a forecast.
+        {es
+          ? `${live ? `${live.year}: NASA FIRMS VIIRS NOAA-20 (archivo de calidad científica y luego casi en tiempo real), con la misma limpieza y filtro de antorchas que el registro de 25 años. ` : ''}La proyección suma lo que suele quemarse después de ${live ? `${new Date(`${live.to}T12:00:00Z`).getUTCDate()} de ${FULL_ES[live.mo]}` : 'esta fecha'}, con la mitad central de los años pasados como rango. Es una guía, no un pronóstico.`
+          : `${live ? `${live.year}: NASA FIRMS VIIRS NOAA-20 (science-quality archive, then near-real-time), same cleaning and gas-flare filter as the 25-year record. ` : ''}Projection adds what usually burns after ${live ? `${FULL[live.mo]} ${new Date(`${live.to}T12:00:00Z`).getUTCDate()}` : 'this date'}, using the middle half of past years as the range. It is a guide, not a forecast.`}
       </p>
     </section>
   )

@@ -2,6 +2,8 @@ import { useMemo } from 'react'
 import ReactECharts from 'echarts-for-react'
 import { MONTH_NAMES, ym } from '../data'
 import InfoTip from './InfoTip'
+import { useT } from '../i18n'
+import { useStore } from '../store'
 
 interface Props {
   months: string[]
@@ -53,6 +55,8 @@ function slopePerDecade(xs: number[], ys: number[]) {
 }
 
 export default function SeasonShift({ months, harm, peakMonth, regionName }: Props) {
+  const t = useT()
+  const es = useStore((s) => s.lang) === 'es'
   const { rows, startMonth } = useMemo(() => seasonTiming(months, harm, peakMonth), [months, harm, peakMonth])
   const DAYS = 30.44
   const startTrend = slopePerDecade(rows.map((r) => r.year), rows.map((r) => r.start * DAYS))
@@ -65,7 +69,7 @@ export default function SeasonShift({ months, harm, peakMonth, regionName }: Pro
       backgroundColor: '#0B0D10', borderColor: '#232832', textStyle: { color: '#E8E6E1', fontFamily: 'IBM Plex Mono', fontSize: 12 },
       formatter: (p: { data: number[] }) => {
         const r = rows[p.data[0]]
-        return r ? `${r.year}: ${label(r.start)} → ${label(r.end)}<br/>half of the burning done by ${label(r.mid)}` : ''
+        return r ? `${r.year}: ${label(r.start)} → ${label(r.end)}<br/>${es ? 'mitad de la quema hecha en' : 'half of the burning done by'} ${label(r.mid)}` : ''
       },
     },
     xAxis: {
@@ -89,20 +93,20 @@ export default function SeasonShift({ months, harm, peakMonth, regionName }: Pro
     }],
   }
 
-  const dir = (v: number, early: string, late: string) => (Math.abs(v) < 2 ? 'no clear change' : `${Math.round(Math.abs(v))} days ${v < 0 ? early : late} per decade`)
+  const dir = (v: number, early: string, late: string) => (Math.abs(v) < 2 ? t('no clear change') : es ? `${Math.round(Math.abs(v))} días ${v < 0 ? early : late} por década` : `${Math.round(Math.abs(v))} days ${v < 0 ? early : late} per decade`)
 
   return (
     <div className="panel flex flex-col gap-2 p-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="flex items-center font-display text-base font-semibold">Is fire season shifting? · {regionName}<InfoTip text="Each bar is one year's fire season, from when 10% of that year's burning had happened to when 90% had. The dot is the halfway point. Bars getting longer means a longer fire season." /></h2>
-        <span className="font-mono text-[11px] text-muted">bar = 10%–90% of each year’s burning · dot = halfway</span>
+        <h2 className="flex items-center font-display text-base font-semibold">{t('Is fire season shifting?')} · {regionName}<InfoTip text={t("Each bar is one year's fire season, from when 10% of that year's burning had happened to when 90% had. The dot is the halfway point. Bars getting longer means a longer fire season.")} /></h2>
+        <span className="font-mono text-[11px] text-muted">{t('bar = 10%–90% of each year’s burning · dot = halfway')}</span>
       </div>
       <div className="flex flex-wrap gap-3 text-sm">
-        <span className="rounded-lg bg-[#1B1F27] px-3 py-1.5 text-soft">Start: <b className={startTrend < -2 ? 'text-fire-soft' : 'text-text'}>{dir(startTrend, 'earlier', 'later')}</b></span>
-        <span className="rounded-lg bg-[#1B1F27] px-3 py-1.5 text-soft">Length: <b className={lenTrend > 2 ? 'text-fire-soft' : 'text-text'}>{dir(lenTrend, 'shorter', 'longer')}</b></span>
+        <span className="rounded-lg bg-[#1B1F27] px-3 py-1.5 text-soft">{t('Start')}: <b className={startTrend < -2 ? 'text-fire-soft' : 'text-text'}>{es ? dir(startTrend, 'antes', 'después') : dir(startTrend, 'earlier', 'later')}</b></span>
+        <span className="rounded-lg bg-[#1B1F27] px-3 py-1.5 text-soft">{t('Length')}: <b className={lenTrend > 2 ? 'text-fire-soft' : 'text-text'}>{es ? dir(lenTrend, 'más corta', 'más larga') : dir(lenTrend, 'shorter', 'longer')}</b></span>
       </div>
       <ReactECharts option={option} notMerge style={{ height: 300, width: '100%' }} />
-      <p className="text-[11px] text-muted">Trend is a straight-line fit over {rows[0]?.year}–{rows[rows.length - 1]?.year} on monthly harmonized data, so treat it as a first look, not a final answer.</p>
+      <p className="text-[11px] text-muted">{es ? `Tendencia lineal ${rows[0]?.year}–${rows[rows.length - 1]?.year} sobre datos mensuales armonizados: es una primera mirada, no una respuesta final.` : `Trend is a straight-line fit over ${rows[0]?.year}–${rows[rows.length - 1]?.year} on monthly harmonized data, so treat it as a first look, not a final answer.`}</p>
     </div>
   )
 }

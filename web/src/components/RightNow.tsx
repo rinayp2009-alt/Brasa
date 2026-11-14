@@ -4,6 +4,7 @@ import type { BBox } from '../data'
 import { MONTH_NAMES, fmt, inBox } from '../data'
 import { useStore } from '../store'
 import InfoTip from './InfoTip'
+import { useT } from '../i18n'
 
 interface Props {
   bbox: BBox | null
@@ -13,7 +14,9 @@ interface Props {
 }
 
 export default function RightNow({ bbox, regionName, typicalByMonth, recordByMonth }: Props) {
-  const { live, setLive, showLive, setShowLive } = useStore()
+  const { live, setLive, showLive, setShowLive, lang } = useStore()
+  const t = useT()
+  const es = lang === 'es'
 
   useEffect(() => {
     if (live) return
@@ -39,11 +42,11 @@ export default function RightNow({ bbox, regionName, typicalByMonth, recordByMon
   }, [live, bbox, typicalByMonth, recordByMonth])
 
   const status = !stats ? null
-    : stats.n >= stats.record ? { t: 'Record pace', c: 'bg-[#FF463C] text-white' }
-    : stats.ratio >= 2 ? { t: 'Extreme activity', c: 'bg-glow text-ink' }
-    : stats.ratio >= 1.25 ? { t: 'Above normal', c: 'bg-[#2A1A0E] text-fire-soft' }
-    : stats.ratio <= 0.6 ? { t: 'Quieter than normal', c: 'bg-[#121B2C] text-[#9CC0FF]' }
-    : { t: 'Typical for the season', c: 'bg-[#1B1F27] text-soft' }
+    : stats.n >= stats.record ? { t: t('Record pace'), c: 'bg-[#FF463C] text-white' }
+    : stats.ratio >= 2 ? { t: t('Extreme activity'), c: 'bg-glow text-ink' }
+    : stats.ratio >= 1.25 ? { t: t('Above normal'), c: 'bg-[#2A1A0E] text-fire-soft' }
+    : stats.ratio <= 0.6 ? { t: t('Quieter than normal'), c: 'bg-[#121B2C] text-[#9CC0FF]' }
+    : { t: t('Typical for the season'), c: 'bg-[#1B1F27] text-soft' }
 
   return (
     <section className="panel flex flex-wrap items-center gap-x-6 gap-y-3 border-[#3A2A1E] px-4 py-3" style={{ background: 'linear-gradient(90deg, #1A120D, #12151B 60%)' }}>
@@ -52,28 +55,28 @@ export default function RightNow({ bbox, regionName, typicalByMonth, recordByMon
           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#FF463C] opacity-60" />
           <span className="relative inline-flex h-3 w-3 rounded-full bg-[#FF463C]" />
         </span>
-        <span className="flex items-center font-display text-base font-semibold">Right now<InfoTip text="Live NASA satellite fire detections from the last 5 days, compared with a normal 5 days in this month over the past 25 years. Known gas flares and factories are removed." /></span>
+        <span className="flex items-center font-display text-base font-semibold">{t('Right now')}<InfoTip text={t('Live NASA satellite fire detections from the last 5 days, compared with a normal 5 days in this month over the past 25 years. Known gas flares and factories are removed.')} /></span>
         <span className="label">{regionName}</span>
       </div>
 
-      {!live && <span className="text-sm text-muted">Fetching the last 5 days from NASA FIRMS…</span>}
-      {live && !live.ok && <span className="text-sm text-muted">Live data unavailable: {live.error?.includes('FIRMS_MAP_KEY') ? 'the NASA FIRMS key is not set up yet' : live.error?.slice(0, 80)}.</span>}
+      {!live && <span className="text-sm text-muted">{t('Fetching the last 5 days from NASA FIRMS…')}</span>}
+      {live && !live.ok && <span className="text-sm text-muted">{es ? 'Datos en vivo no disponibles' : 'Live data unavailable'}: {es ? 'el servicio en vivo de la NASA no responde ahora' : live.error?.includes('FIRMS_MAP_KEY') ? 'the NASA FIRMS key is not set up yet' : live.error?.slice(0, 80)}.</span>}
 
       {stats && status && (
         <>
           <div className="flex items-baseline gap-2">
             <span className="font-display text-2xl font-bold">{fmt(stats.n)}</span>
-            <span className="text-xs text-muted">burning days, {live!.from} → {live!.to}</span>
+            <span className="text-xs text-muted">{t('burning days')}, {live!.from} → {live!.to}</span>
           </div>
           <div className="text-sm text-soft">
-            Typical {live!.days}-day stretch in {MONTH_NAMES[stats.mo]}: <b className="text-text">{fmt(stats.typical)}</b>
+            {es ? `${live!.days} días normales en ${MONTH_NAMES[stats.mo]}:` : `Typical ${live!.days}-day stretch in ${MONTH_NAMES[stats.mo]}:`} <b className="text-text">{fmt(stats.typical)}</b>
             {stats.typical > 0 && <> · <b className={stats.ratio >= 1.25 ? 'text-fire-soft' : 'text-text'}>{stats.ratio >= 1 ? '+' : '−'}{Math.round(Math.abs(stats.ratio - 1) * 100)}%</b></>}
           </div>
           <span className={`rounded-full px-3 py-1 text-sm font-semibold ${status.c}`}>{status.t}</span>
           <label className="ml-auto flex cursor-pointer items-center gap-2 text-xs text-soft">
-            <input type="checkbox" checked={showLive} onChange={(e) => setShowLive(e.target.checked)} /> Show live fires on map
+            <input type="checkbox" checked={showLive} onChange={(e) => setShowLive(e.target.checked)} /> {t('Show live fires on map')}
           </label>
-          <span className="w-full text-[11px] text-muted">NASA FIRMS VIIRS NOAA-20 near-real-time, compared with BRASA’s harmonized 2003–2025 record for the same month.</span>
+          <span className="w-full text-[11px] text-muted">{t('NASA FIRMS VIIRS NOAA-20 near-real-time, compared with BRASA’s harmonized 2003–2025 record for the same month.')}</span>
         </>
       )}
     </section>

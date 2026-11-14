@@ -33,8 +33,9 @@ export default function Calendar({ months, values, z }: Props) {
       backgroundColor: '#0B0D10', borderColor: '#232832', textStyle: { color: '#E8E6E1', fontFamily: 'IBM Plex Mono', fontSize: 12 },
       formatter: (p: { value: number[] }) => {
         const i = p.value[p.value.length - 1]
-        const flag = z[i] >= 2 ? ' · <b style="color:#FFE08A">extreme</b>' : z[i] >= 1 ? ' · above normal' : ''
-        return `${MONTH_NAMES[ym(months[i]).m - 1]} ${ym(months[i]).y}<br/>${fmt(values[i])} burning days${flag}`
+        const es = useStore.getState().lang === 'es'
+        const flag = z[i] >= 2 ? ` · <b style="color:#FFE08A">${es ? 'extremo' : 'extreme'}</b>` : z[i] >= 1 ? (es ? ' · sobre lo normal' : ' · above normal') : ''
+        return `${MONTH_NAMES[ym(months[i]).m - 1]} ${ym(months[i]).y}<br/>${fmt(values[i])} ${es ? 'días de quema' : 'burning days'}${flag}`
       },
     },
     xAxis: {
