@@ -14,6 +14,7 @@ import SeasonShift from './components/SeasonShift'
 import Accuracy from './components/Accuracy'
 import InfoTip from './components/InfoTip'
 import Welcome from './components/Welcome'
+import RecordTracker from './components/RecordTracker'
 
 const MODES: { id: Mode; name: string; sub: string }[] = [
   { id: 'modis', name: 'Old satellite only', sub: 'MODIS' },
@@ -80,9 +81,11 @@ function Dashboard({ ds }: { ds: Dataset }) {
   useEffect(() => {
     const p = new URLSearchParams()
     if (s.regionId !== 'custom') p.set('region', s.regionId)
+    else if (s.customBox) { const b = s.customBox; p.set('box', [b.west, b.south, b.east, b.north].map((x) => x.toFixed(2)).join(',')) }
     p.set('mode', s.mode); p.set('t', String(monthIdx))
     window.history.replaceState(null, '', `?${p.toString()}`)
-  }, [s.regionId, s.mode, monthIdx])
+  }, [s.regionId, s.customBox, s.mode, monthIdx])
+  const [copied, setCopied] = useState(false)
 
   // keyboard: space play/pause, arrows step months
   useEffect(() => {
@@ -140,6 +143,20 @@ function Dashboard({ ds }: { ds: Dataset }) {
       + `Fire season here usually runs ${MONTH_NAMES[seas.start]}–${MONTH_NAMES[seas.end]}, peaking in ${MONTH_NAMES[seas.peak]}.`
       + (domLand && s.mode === 'harm' ? ` Mostly ${domLand} burning.` : '')
   const v = ds.validation
+
+  const share = async () => {
+    try { await navigator.clipboard.writeText(window.location.href); setCopied(true); setTimeout(() => setCopied(false), 2000) } catch { window.prompt('Copy this link:', window.location.href) }
+  }
+  const download = () => {
+    const rows = [['month', 'harmonized_burning_days', 'harmonized_low_90', 'harmonized_high_90', 'modis_only', 'both_mixed_unharmonized', 'cropland', 'forest_woodland', 'grass_shrub_wetland', 'source']]
+    months.forEach((k, i) => rows.push([k, series.harm[i], series.lo[i], series.hi[i], series.modis[i], series.naive[i], series.crop[i], series.forest[i], series.grass[i], ds.meta.source[i] || ''].map((x) => typeof x === 'number' ? x.toFixed(1) : String(x))))
+    const head = `# BRASA harmonized MODIS-VIIRS burning record, ${region.name}${region.bbox ? ` (W ${region.bbox.west}, S ${region.bbox.south}, E ${region.bbox.east}, N ${region.bbox.north})` : ''}\n# unit: fire-active H3 res-5 hexagon-days (~252 km2). Source: NASA FIRMS MODIS C6.1 + VIIRS 375 m. https://brasa-dekk.vercel.app\n`
+    const blob = new Blob([head + rows.map((r) => r.join(',')).join('\n')], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const el = document.createElement('a')
+    el.href = url; el.download = `brasa_${region.id}_2000-2025.csv`; el.click()
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
+  }
 
   return (
     <div className="min-h-screen px-4 pb-14 pt-5 sm:px-8">
@@ -219,6 +236,10 @@ function Dashboard({ ds }: { ds: Dataset }) {
           )}
           <p className="font-display text-xl font-semibold leading-snug sm:text-2xl">{headline}</p>
           <p className="mt-1.5 text-sm text-soft">{subline}</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button onClick={share} className="min-h-9 rounded-lg border border-line px-3 text-xs font-semibold text-soft hover:border-fire hover:text-fire">{copied ? '✓ Link copied' : '🔗 Share this view'}</button>
+            <button onClick={download} className="min-h-9 rounded-lg border border-line px-3 text-xs font-semibold text-soft hover:border-fire hover:text-fire">⬇ Download {region.name} data (CSV)</button>
+          </div>
         </section>
 
         {/* Map + side */}
@@ -303,6 +324,8 @@ function Dashboard({ ds }: { ds: Dataset }) {
             </div>
           </div>
         </section>
+
+        <RecordTracker months={months} harm={series.harm} bbox={region.bbox} regionName={region.name} />
 
         <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <WhatsBurning months={months} series={series} monthIdx={monthIdx} regionName={region.name} />

@@ -353,10 +353,11 @@ def main():
     static_cells = sorted(days[days >= 20].index.tolist())
     api_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "web", "api")
     os.makedirs(api_dir, exist_ok=True)
-    now_ts = os.path.join(api_dir, "now.ts")
-    src = open(now_ts).read()
-    src = re.sub(r"const STATIC_CELLS: string\[\] = \[.*?\]", "const STATIC_CELLS: string[] = " + json.dumps(static_cells).replace("\\", "\\\\"), src, flags=re.S)
-    open(now_ts, "w").write(src)
+    for fn in ("now.ts", "ytd.ts"):
+        now_ts = os.path.join(api_dir, fn)
+        src = open(now_ts).read()
+        src = re.sub(r"const STATIC_CELLS: string\[\] = \[.*?\]", "const STATIC_CELLS: string[] = " + json.dumps(static_cells).replace("\\", "\\\\"), src, flags=re.S)
+        open(now_ts, "w").write(src)
     print(f"{len(static_cells)} static heat-source cells written for the live filter")
 
     for name, obj in [("meta.json", meta), ("validation.json", validation), ("cells.json", cells_out)]:

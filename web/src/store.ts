@@ -42,11 +42,13 @@ interface State {
 
 // read initial view from the URL so any view can be shared as a link
 const params = new URLSearchParams(window.location.search)
+const box = params.get('box')?.split(',').map(Number)
+const initBox: BBox | null = box && box.length === 4 && box.every((x) => Number.isFinite(x)) ? { west: box[0], south: box[1], east: box[2], north: box[3] } : null
 
 export const useStore = create<State>((set) => ({
   mode: (params.get('mode') as Mode) || 'harm',
-  regionId: params.get('region') || 'delta',
-  customBox: null,
+  regionId: initBox ? 'custom' : params.get('region') || 'delta',
+  customBox: initBox,
   monthIdx: params.get('t') ? +params.get('t')! : -1,
   playing: false,
   drawing: false,
