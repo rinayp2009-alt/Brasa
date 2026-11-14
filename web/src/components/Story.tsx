@@ -25,7 +25,7 @@ const STEPS: Step[] = [
   },
   {
     title: '3 · Paraná Delta, August 2020',
-    text: 'The wetlands next to Rosario burned for months. BRASA flags August 2020 as the worst August in 25 years: more than five times a normal August. Look at the calendar: the whole 2020 row lights up.',
+    text: 'The wetlands next to Rosario burned for months. August 2020 had about five times the burning of a normal August, one of the four worst Augusts on record, in a near-tie with 2004, 2006 and 2008. That kind of comparison is only possible because the old and new satellites are blended fairly.',
     region: 'delta', mode: 'harm', month: '2020-08', colorBy: 'fire',
   },
   {

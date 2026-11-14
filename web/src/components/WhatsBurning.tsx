@@ -1,6 +1,7 @@
 import ReactECharts from 'echarts-for-react'
 import { LAND, MONTH_NAMES, fmt, ym } from '../data'
 import type { RegionSeries } from '../data'
+import InfoTip from './InfoTip'
 
 interface Props {
   months: string[]
@@ -46,7 +47,7 @@ export default function WhatsBurning({ months, series, monthIdx, regionName }: P
   return (
     <div className="panel flex flex-col gap-3 p-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="font-display text-base font-semibold">What’s burning · {regionName}</h2>
+        <h2 className="flex items-center font-display text-base font-semibold">What’s burning · {regionName}<InfoTip text="Every fire is matched to NASA's MODIS land cover map for that year. Cropland usually means farmers burning fields; forest and grassland fires are wildland fires." /></h2>
         <span className="font-mono text-[11px] text-muted">NASA MODIS land cover under each fire</span>
       </div>
       <div className="flex flex-col gap-2">

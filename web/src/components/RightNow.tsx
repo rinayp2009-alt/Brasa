@@ -3,6 +3,7 @@ import { cellToLatLng } from 'h3-js'
 import type { BBox } from '../data'
 import { MONTH_NAMES, fmt, inBox } from '../data'
 import { useStore } from '../store'
+import InfoTip from './InfoTip'
 
 interface Props {
   bbox: BBox | null
@@ -51,7 +52,7 @@ export default function RightNow({ bbox, regionName, typicalByMonth, recordByMon
           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#FF463C] opacity-60" />
           <span className="relative inline-flex h-3 w-3 rounded-full bg-[#FF463C]" />
         </span>
-        <span className="font-display text-base font-semibold">Right now</span>
+        <span className="flex items-center font-display text-base font-semibold">Right now<InfoTip text="Live NASA satellite fire detections from the last 5 days, compared with a normal 5 days in this month over the past 25 years. Known gas flares and factories are removed." /></span>
         <span className="label">{regionName}</span>
       </div>
 
@@ -62,7 +63,7 @@ export default function RightNow({ bbox, regionName, typicalByMonth, recordByMon
         <>
           <div className="flex items-baseline gap-2">
             <span className="font-display text-2xl font-bold">{fmt(stats.n)}</span>
-            <span className="text-xs text-muted">fire-active cell-days, {live!.from} → {live!.to}</span>
+            <span className="text-xs text-muted">burning days, {live!.from} → {live!.to}</span>
           </div>
           <div className="text-sm text-soft">
             Typical {live!.days}-day stretch in {MONTH_NAMES[stats.mo]}: <b className="text-text">{fmt(stats.typical)}</b>

@@ -99,7 +99,7 @@ export default function MapView({ ds, bbox }: Props) {
       stroked: false,
       pickable: true,
       updateTriggers: { getFillColor: [bbox, mode, colorBy], getElevation: [mode] },
-      onHover: (info: PickingInfo<Hex>) => setHover(info.object ? { x: info.x, y: info.y, text: `${fmt(info.object.v)} fire-active days · ${LAND_NAMES[info.object.lc]}` } : null),
+      onHover: (info: PickingInfo<Hex>) => setHover(info.object ? { x: info.x, y: info.y, text: `${fmt(info.object.v)} burning days · ${LAND_NAMES[info.object.lc]}` } : null),
     }),
     showLive && live?.cellDays && new H3HexagonLayer<{ hex: string; n: number }>({
       id: 'live',

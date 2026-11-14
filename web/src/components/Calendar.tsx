@@ -34,7 +34,7 @@ export default function Calendar({ months, values, z }: Props) {
       formatter: (p: { value: number[] }) => {
         const i = p.value[p.value.length - 1]
         const flag = z[i] >= 2 ? ' · <b style="color:#FFE08A">extreme</b>' : z[i] >= 1 ? ' · above normal' : ''
-        return `${MONTH_NAMES[ym(months[i]).m - 1]} ${ym(months[i]).y}<br/>${fmt(values[i])} fire-active days${flag}`
+        return `${MONTH_NAMES[ym(months[i]).m - 1]} ${ym(months[i]).y}<br/>${fmt(values[i])} burning days${flag}`
       },
     },
     xAxis: {

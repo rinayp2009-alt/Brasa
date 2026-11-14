@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import ReactECharts from 'echarts-for-react'
 import { MONTH_NAMES, ym } from '../data'
+import InfoTip from './InfoTip'
 
 interface Props {
   months: string[]
@@ -93,7 +94,7 @@ export default function SeasonShift({ months, harm, peakMonth, regionName }: Pro
   return (
     <div className="panel flex flex-col gap-2 p-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="font-display text-base font-semibold">Is fire season shifting? · {regionName}</h2>
+        <h2 className="flex items-center font-display text-base font-semibold">Is fire season shifting? · {regionName}<InfoTip text="Each bar is one year's fire season, from when 10% of that year's burning had happened to when 90% had. The dot is the halfway point. Bars getting longer means a longer fire season." /></h2>
         <span className="font-mono text-[11px] text-muted">bar = 10%–90% of each year’s burning · dot = halfway</span>
       </div>
       <div className="flex flex-wrap gap-3 text-sm">

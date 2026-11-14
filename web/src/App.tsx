@@ -12,12 +12,16 @@ import RightNow from './components/RightNow'
 import Story from './components/Story'
 import SeasonShift from './components/SeasonShift'
 import Accuracy from './components/Accuracy'
+import InfoTip from './components/InfoTip'
+import Welcome from './components/Welcome'
 
-const MODES: { id: Mode; name: string }[] = [
-  { id: 'modis', name: 'Raw MODIS' },
-  { id: 'naive', name: 'MODIS + VIIRS (naive)' },
-  { id: 'harm', name: 'Harmonized' },
+const MODES: { id: Mode; name: string; sub: string }[] = [
+  { id: 'modis', name: 'Old satellite only', sub: 'MODIS' },
+  { id: 'naive', name: 'Both mixed (wrong)', sub: 'MODIS + VIIRS added' },
+  { id: 'harm', name: 'BRASA blended ✓', sub: 'harmonized' },
 ]
+
+const UNIT_TIP = 'A “burning day” is one ~250 km² hexagon where a satellite saw at least one fire on that day. We add them up over the area and month, which treats both satellites fairly.'
 
 const MODE_NOTE: Record<Mode, { text: string; tone: 'plain' | 'warn' }> = {
   modis: { text: 'One consistent sensor since 2000, but MODIS misses the small fires VIIRS can see.', tone: 'plain' },
@@ -111,12 +115,30 @@ function Dashboard({ ds }: { ds: Dataset }) {
   const cur = values[monthIdx]
   const zc = z[monthIdx]
   const rank = rankOf(months, values, monthIdx)
-  const extreme = zc >= 2 || (rank.rank > 0 && rank.rank <= 2 && cur > 2 * typical[m - 1])
+  const extreme = zc >= 2 || (rank.rank > 0 && rank.rank <= 3 && cur > 2 * typical[m - 1])
   const status = extreme ? { t: 'Extreme activity', c: 'bg-glow text-ink' }
     : zc >= 1 ? { t: 'Above normal', c: 'bg-[#2A1A0E] text-fire-soft' }
     : zc <= -1 ? { t: 'Below normal', c: 'bg-[#121B2C] text-[#9CC0FF]' }
     : { t: 'Typical', c: 'bg-[#1B1F27] text-soft' }
   const note = MODE_NOTE[s.mode]
+
+  // one plain-English sentence for the selected area and month
+  const mName = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][m - 1]
+  const times = typical[m - 1] > 0 ? cur / typical[m - 1] : 0
+  const headline = cur <= 0 ? `${mName} ${y} in ${region.name}: no fires detected.`
+    : rank.rank === 1 ? `${mName} ${y} was the worst ${mName} in ${rank.of} years in ${region.name}.`
+    : extreme && rank.rank <= 4 ? `${mName} ${y} was one of the worst ${mName}s on record in ${region.name} (#${rank.rank} of ${rank.of}).`
+    : extreme ? `${mName} ${y} was far above a normal ${mName} in ${region.name}.`
+    : zc >= 1 ? `${mName} ${y} was busier than a normal ${mName} in ${region.name}.`
+    : zc <= -1 ? `${mName} ${y} was quieter than a normal ${mName} in ${region.name}.`
+    : `${mName} ${y} was a fairly normal ${mName} in ${region.name}.`
+  const land = [series.crop[monthIdx], series.forest[monthIdx], series.grass[monthIdx]]
+  const landName = ['cropland and farms', 'forest and woodland', 'grass, shrub and wetland']
+  const domLand = land.some((x) => x > 0) ? landName[land.indexOf(Math.max(...land))] : null
+  const subline = cur <= 0 ? `Fire season here usually runs ${MONTH_NAMES[seas.start]}–${MONTH_NAMES[seas.end]}, peaking in ${MONTH_NAMES[seas.peak]}.`
+    : `${fmt(cur)} burning days, ${times >= 1.15 ? `${times.toFixed(1)}× a normal ${mName}` : times <= 0.85 ? `${Math.round(times * 100)}% of a normal ${mName}` : `close to a normal ${mName}`}. `
+      + `Fire season here usually runs ${MONTH_NAMES[seas.start]}–${MONTH_NAMES[seas.end]}, peaking in ${MONTH_NAMES[seas.peak]}.`
+      + (domLand && s.mode === 'harm' ? ` Mostly ${domLand} burning.` : '')
   const v = ds.validation
 
   return (
@@ -129,7 +151,7 @@ function Dashboard({ ds }: { ds: Dataset }) {
             <Logo />
             <div>
               <h1 className="font-display text-2xl font-bold tracking-[0.08em]">BRASA</h1>
-              <p className="text-[13px] text-muted">Harmonized burning activity calendar · NASA MODIS + VIIRS · Argentina 2000–2025</p>
+              <p className="text-[13px] text-muted">25 years of NASA fire satellites, blended into one honest record · Demo coverage: Argentina 2000–2025</p>
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -144,7 +166,7 @@ function Dashboard({ ds }: { ds: Dataset }) {
         {/* Controls */}
         <section className="flex flex-wrap items-end gap-5">
           <div className="flex flex-col gap-2">
-            <span className="label">Area of interest</span>
+            <span className="label flex items-center">Pick an area <InfoTip text="Choose a region, or draw your own box on the map. Every chart below updates for that area." /></span>
             <div className="flex flex-wrap gap-1.5">
               {REGIONS.map((r) => (
                 <button key={r.id} onClick={() => s.setRegion(r.id)} aria-pressed={s.regionId === r.id}
@@ -159,12 +181,13 @@ function Dashboard({ ds }: { ds: Dataset }) {
             </div>
           </div>
           <div className="flex flex-col gap-2">
-            <span className="label">Sensor record</span>
+            <span className="label flex items-center">Which satellite record? <InfoTip text="NASA's older MODIS satellites (since 2000) miss small fires. VIIRS (since 2012) sees far more. Adding them together fakes a jump in 2012. BRASA blends them so every year is comparable. Try switching to see the difference." /></span>
             <div className="flex flex-wrap gap-1 rounded-xl border border-line bg-panel p-1">
               {MODES.map((md) => (
                 <button key={md.id} onClick={() => s.setMode(md.id)} aria-pressed={s.mode === md.id}
-                  className={`min-h-10 rounded-lg px-3.5 text-[13px] font-semibold transition ${s.mode === md.id ? 'bg-fire text-[#120A04]' : 'text-soft hover:text-text'}`}>
-                  {md.name}
+                  className={`flex min-h-11 flex-col items-start justify-center rounded-lg px-3.5 text-left transition ${s.mode === md.id ? 'bg-fire text-[#120A04]' : 'text-soft hover:text-text'}`}>
+                  <span className="text-[13px] font-semibold leading-tight">{md.name}</span>
+                  <span className={`font-mono text-[10px] leading-tight ${s.mode === md.id ? 'text-[#3A1A06]' : 'text-muted'}`}>{md.sub}</span>
                 </button>
               ))}
             </div>
@@ -189,11 +212,20 @@ function Dashboard({ ds }: { ds: Dataset }) {
           </div>
         </section>
 
+        {/* Plain-English headline */}
+        <section className="panel border-[#3A2A1E] px-5 py-4">
+          {s.mode === 'naive' && (
+            <p className="mb-2 rounded-md bg-fire-soft px-3 py-1.5 text-[13px] font-semibold text-[#120A04]">⚠ You are viewing the “both mixed” record: years after 2012 look worse than they were.</p>
+          )}
+          <p className="font-display text-xl font-semibold leading-snug sm:text-2xl">{headline}</p>
+          <p className="mt-1.5 text-sm text-soft">{subline}</p>
+        </section>
+
         {/* Map + side */}
         <section className="flex flex-wrap gap-4">
           <div className="panel flex min-h-[460px] flex-[1_1_520px] flex-col gap-2 p-3">
             <div className="flex items-center justify-between px-1">
-              <h2 className="font-display text-base font-semibold">Fire activity · {MONTH_NAMES[m - 1]} {y}</h2>
+              <h2 className="flex items-center font-display text-base font-semibold">Fire map · {MONTH_NAMES[m - 1]} {y}<InfoTip text="Each hexagon is ~250 km². Color shows how many days it was burning that month. Hover a hexagon for details, drag to move, scroll to zoom." /></h2>
               <div className="flex items-center gap-3">
                 <div className="flex rounded-lg border border-line p-0.5 text-xs">
                   {(['fire', 'land'] as const).map((c) => (
@@ -228,10 +260,10 @@ function Dashboard({ ds }: { ds: Dataset }) {
               <div className="panel flex flex-col gap-1.5 p-4">
                 <span className="label truncate">{region.name}</span>
                 <span className="font-display text-[32px] font-bold leading-none">{fmt(cur)}</span>
-                <span className="text-xs text-muted">fire-active cell-days this month</span>
+                <span className="flex items-center text-xs text-muted">burning days this month <InfoTip text={UNIT_TIP} /></span>
               </div>
               <div className="panel flex flex-col gap-1.5 p-4">
-                <span className="label">vs typical {MONTH_NAMES[m - 1]}</span>
+                <span className="label">vs a normal {MONTH_NAMES[m - 1]}</span>
                 <span className={`font-display text-[32px] font-bold leading-none ${extreme ? 'text-glow' : zc >= 1 ? 'text-fire-soft' : zc <= -1 ? 'text-[#9CC0FF]' : ''}`}>
                   {typical[m - 1] > 0 ? `${cur >= typical[m - 1] ? '+' : '−'}${Math.round(Math.abs(cur / typical[m - 1] - 1) * 100)}%` : '–'}
                 </span>
@@ -246,7 +278,7 @@ function Dashboard({ ds }: { ds: Dataset }) {
 
             <div className="panel flex flex-col gap-2 p-4">
               <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <h2 className="font-display text-base font-semibold">Burning activity per year · {region.name}</h2>
+                <h2 className="flex items-center font-display text-base font-semibold">Burning per year · {region.name}<InfoTip text="Total burning days each year. Switch the satellite record above to see how mixing satellites fakes a jump in 2012 and 2018." /></h2>
                 <span className="font-mono text-[11px] text-muted">click a year to jump</span>
               </div>
               <AnnualChart months={months} modis={series.modis} naive={series.naive} harm={series.harm} lo={series.lo} hi={series.hi} mode={s.mode} />
@@ -254,7 +286,7 @@ function Dashboard({ ds }: { ds: Dataset }) {
             </div>
 
             <div className="panel flex flex-col gap-3 p-4">
-              <h2 className="font-display text-base font-semibold">Fire season · {region.name}</h2>
+              <h2 className="flex items-center font-display text-base font-semibold">Fire season · {region.name}<InfoTip text="The average amount of burning in each calendar month. Highlighted letters are the fire season: the months with at least 40% of the peak month's burning." /></h2>
               <p className="text-[13px] text-muted">{region.blurb}. Average harmonized activity per month, 2003–2025.</p>
               <div className="flex h-20 items-end gap-1">
                 {seas.clim.map((c, i) => {
@@ -280,7 +312,7 @@ function Dashboard({ ds }: { ds: Dataset }) {
         {/* Calendar */}
         <section className="panel flex flex-col gap-2 p-4">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <h2 className="font-display text-base font-semibold">Burning calendar · {region.name} · {series.nCells.toLocaleString()} hexagons</h2>
+            <h2 className="flex items-center font-display text-base font-semibold">Burning calendar · {region.name}<InfoTip text="Each square is one month. Brighter means more burning. A yellow outline marks a month far above its normal level for that time of year. Click any square to jump there." /></h2>
             <div className="flex flex-wrap gap-4 text-xs text-soft">
               <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-4 rounded-sm border-[1.5px] border-glow" /> Extreme month (far above its normal)</span>
               <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-4 rounded-sm border-2 border-white" /> Selected</span>
@@ -293,7 +325,7 @@ function Dashboard({ ds }: { ds: Dataset }) {
         <section id="method" className="flex flex-wrap gap-4">
           <div className="panel flex flex-[1_1_420px] flex-col gap-2 p-4">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <h2 className="font-display text-base font-semibold">Does the harmonization work?</h2>
+              <h2 className="flex items-center font-display text-base font-semibold">Does the blending work?<InfoTip text="We hid each year from 2012 to 2025, predicted it from the old MODIS satellite alone, then compared with what VIIRS really saw. Close bars mean the blend can be trusted for the years before VIIRS existed." /></h2>
               <span className="font-mono text-xs text-glow">r = {v.r_annual.toFixed(3)} · {(v.mape_annual * 100).toFixed(1)}% yearly error</span>
             </div>
             <p className="text-[13px] text-muted">Each year from 2012 to 2025 was hidden, predicted from MODIS with a model fitted on the other years, then compared with what VIIRS really saw.</p>
@@ -319,9 +351,10 @@ function Dashboard({ ds }: { ds: Dataset }) {
         </section>
 
         <Story months={months} />
+        <Welcome />
         {ds.robustness && <section id="accuracy"><Accuracy r={ds.robustness} /></section>}
 
-        <footer className="text-center text-xs text-muted">BRASA · NASA Space Apps Challenge 2026 · Harmonization of MODIS and VIIRS Hot Spots</footer>
+        <footer className="text-center text-xs text-muted">BRASA · NASA Space Apps Challenge 2026 · Harmonization of MODIS and VIIRS Hot Spots · Demo coverage: Argentina; the pipeline runs on NASA FIRMS data for any country</footer>
       </div>
     </div>
   )
