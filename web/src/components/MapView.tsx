@@ -18,7 +18,11 @@ interface Props {
   bbox: BBox | null
 }
 
-type Hex = { hex: string; v: number; inRegion: boolean }
+type Hex = { hex: string; v: number; inRegion: boolean; lc: number }
+
+// cropland, forest, grass/shrub/wetland, other
+const LAND_RGB: [number, number, number][] = [[232, 197, 71], [63, 174, 120], [255, 138, 61], [120, 124, 132]]
+const LAND_NAMES = ['mostly cropland', 'mostly forest', 'mostly grass/shrub/wetland', 'other land']
 
 function rasterLayer(id: string, url: string, maxZoom: number, opacity = 1) {
   return new TileLayer({
@@ -45,8 +49,8 @@ function boxPolygon(b: BBox) {
 }
 
 export default function MapView({ ds, bbox }: Props) {
-  const { mode, monthIdx, drawing, draftCorner, setDraftCorner, setCustomBox, extruded } = useStore()
-  const [hover, setHover] = useState<{ x: number; y: number; v: number } | null>(null)
+  const { mode, monthIdx, drawing, draftCorner, setDraftCorner, setCustomBox, extruded, colorBy, showLive, live } = useStore()
+  const [hover, setHover] = useState<{ x: number; y: number; text: string } | null>(null)
 
   const hexes: Hex[] = useMemo(() => {
     const rows = ds.cells.months[monthIdx] || []
@@ -54,7 +58,9 @@ export default function MapView({ ds, bbox }: Props) {
       const [lat, lon] = ds.cells.centers[r[0]]
       const v = mode === 'modis' ? r[1] : mode === 'naive' ? r[2] : r[3] / 10
       const inRegion = !bbox || (lon >= bbox.west && lon <= bbox.east && lat >= bbox.south && lat <= bbox.north)
-      return { hex: ds.cells.cells[r[0]], v, inRegion }
+      const mix = [r[4] || 0, r[5] || 0, r[6] || 0]
+      const lc = mix[0] + mix[1] + mix[2] === 0 ? 3 : mix.indexOf(Math.max(...mix))
+      return { hex: ds.cells.cells[r[0]], v, inRegion, lc }
     }).filter((h) => h.v > 0)
   }, [ds, monthIdx, mode, bbox])
 
@@ -66,6 +72,10 @@ export default function MapView({ ds, bbox }: Props) {
       getHexagon: (d) => d.hex,
       getFillColor: (d) => {
         const t = Math.log1p(d.v) / Math.log1p(31)
+        if (colorBy === 'land') {
+          const [r, g, b] = LAND_RGB[d.lc]
+          return [r, g, b, (d.inRegion ? 120 : 40) + Math.round(t * 120)]
+        }
         const [r, g, b] = ramp(0.15 + 0.85 * t)
         return [r, g, b, d.inRegion ? 235 : 90]
       },
@@ -74,9 +84,20 @@ export default function MapView({ ds, bbox }: Props) {
       elevationScale: 1,
       stroked: false,
       pickable: true,
-      updateTriggers: { getFillColor: [bbox, mode], getElevation: [mode] },
+      updateTriggers: { getFillColor: [bbox, mode, colorBy], getElevation: [mode] },
       transitions: { getFillColor: 250, getElevation: 250 },
-      onHover: (info: PickingInfo<Hex>) => setHover(info.object ? { x: info.x, y: info.y, v: info.object.v } : null),
+      onHover: (info: PickingInfo<Hex>) => setHover(info.object ? { x: info.x, y: info.y, text: `${fmt(info.object.v)} fire-active days · ${LAND_NAMES[info.object.lc]}` } : null),
+    }),
+    showLive && live?.cellDays && new H3HexagonLayer<{ hex: string; n: number }>({
+      id: 'live',
+      data: Object.entries(live.cellDays.reduce((acc: Record<string, number>, [h]) => { acc[h] = (acc[h] || 0) + 1; return acc }, {})).map(([hex, n]) => ({ hex, n })),
+      getHexagon: (d) => d.hex,
+      getFillColor: (d) => [255, 70, 60, 120 + Math.min(135, d.n * 25)],
+      stroked: true,
+      getLineColor: [255, 224, 138, 255],
+      lineWidthMinPixels: 1,
+      pickable: true,
+      onHover: (info: PickingInfo<{ hex: string; n: number }>) => setHover(info.object ? { x: info.x, y: info.y, text: `LIVE · burning ${info.object.n} of the last ${live.days} days` } : null),
     }),
     bbox && new PolygonLayer({
       id: 'region',
@@ -109,7 +130,7 @@ export default function MapView({ ds, bbox }: Props) {
       {hover && (
         <div className="pointer-events-none absolute rounded-md border border-line bg-ink/90 px-2 py-1 font-mono text-xs text-text"
           style={{ left: hover.x + 12, top: hover.y + 12 }}>
-          {fmt(hover.v)} fire-active days
+          {hover.text}
         </div>
       )}
       {drawing && (

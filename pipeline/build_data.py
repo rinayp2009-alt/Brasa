@@ -3,7 +3,7 @@ BRASA data pipeline: harmonize NASA FIRMS MODIS and VIIRS active-fire hotspots
 into one consistent burning-activity record for Argentina (Nov 2000 - Dec 2025).
 
 Usage:
-    python pipeline/build_data.py <path-to-firms-folder> [output-folder]
+    python pipeline/build_data.py <path-to-firms-folder> [output-folder] [landcover-folder]
 
 The FIRMS folder must contain the yearly country CSVs from
 https://firms.modaps.eosdis.nasa.gov/country/ in three subfolders:
@@ -34,6 +34,9 @@ import os
 import sys
 import time
 from datetime import date
+
+import glob
+import re
 
 import duckdb
 import h3
@@ -91,6 +94,35 @@ def load(firms):
     return df
 
 
+# MODIS MCD12Q1 LC_Type1 (IGBP) classes grouped into what is burning
+LC_GROUP = np.zeros(256, dtype=np.int8) + 3          # 3 = other (urban, snow, barren, water, nodata)
+LC_GROUP[[12, 14]] = 0                                # 0 = cropland / farm mosaic
+LC_GROUP[[1, 2, 3, 4, 5, 8]] = 1                      # 1 = forest and woody savanna
+LC_GROUP[[6, 7, 9, 10, 11]] = 2                      # 2 = shrub, savanna, grassland, wetland
+
+
+def landcover_classes(df, folder):
+    """Return the land cover group (0-3) under every detection, using that year's map."""
+    import rasterio
+    files = {int(re.search(r"doy(\d{4})", f).group(1)): f for f in glob.glob(os.path.join(folder, "*LC_Type1*.tif"))}
+    if not files:
+        return None
+    years_avail = sorted(files)
+    out = np.full(len(df), 3, dtype=np.int8)
+    yrs = df.d.dt.year.values
+    lat = df.lat.values
+    lon = df.lon.values
+    for y in np.unique(yrs):
+        yy = min(max(int(y), years_avail[0]), years_avail[-1])
+        with rasterio.open(files[yy]) as r:
+            a = r.read(1)
+            rows, cols = rasterio.transform.rowcol(r.transform, lon[yrs == y], lat[yrs == y])
+        rows = np.clip(np.asarray(rows), 0, a.shape[0] - 1)
+        cols = np.clip(np.asarray(cols), 0, a.shape[1] - 1)
+        out[yrs == y] = LC_GROUP[a[rows, cols]]
+    return out
+
+
 def main():
     firms = sys.argv[1]
     out = sys.argv[2] if len(sys.argv) > 2 else os.path.join(os.path.dirname(__file__), "..", "web", "public", "data")
@@ -112,6 +144,11 @@ def main():
     df["mi"] = [MIDX.get((y, m), -1) for y, m in zip(df.d.dt.year.values, df.d.dt.month.values)]
     df = df[df.mi >= 0]
     df["terra"] = (df.grp == "M") & (df.sat == "Terra")
+
+    lc_folder = sys.argv[3] if len(sys.argv) > 3 else None
+    df["lc"] = landcover_classes(df, lc_folder) if lc_folder else 3
+    if lc_folder:
+        print("land cover shares (all detections):", df.lc.value_counts(normalize=True).round(3).to_dict())
 
     # fire-active cell-days per group
     def celldays(mask, name):
@@ -208,7 +245,17 @@ def main():
     cells = sorted(cm.cell.unique())
     cidx = {c: i for i, c in enumerate(cells)}
     centers = [h3.cell_to_latlng(c) for c in cells]
-    # per-month sparse arrays: [cellIdx, modis, naive, harmonized x10]
+    # land cover mix per cell-month, from the sensor that supplies the harmonized value
+    src_grp = np.array(["S" if src == "viirs" else "J" if src == "noaa20" else "M" for src in source])
+    use = df[df.grp.values == src_grp[df.mi.values]]
+    lcf = use.groupby(["cell", "mi", "lc"]).size().unstack(fill_value=0)
+    for k in range(4):
+        if k not in lcf.columns:
+            lcf[k] = 0
+    lcf = (lcf[[0, 1, 2, 3]].div(lcf.sum(axis=1), axis=0) * 100).round().astype(int)
+    lc_lookup = {k: tuple(v) for k, v in zip(lcf.index, lcf.values)}
+
+    # per-month sparse arrays: [cellIdx, modis, naive, harmonized x10, crop%, forest%, grass%]
     # harmonized per cell: VIIRS observed where available, otherwise MODIS (or Terra
     # before Aqua) scaled by that month's national calibration factor.
     by_month = [[] for _ in MONTHS]
@@ -225,7 +272,8 @@ def main():
             hv = r.t * factor[i]
         if r.m == 0 and r.n == 0 and hv == 0:
             continue
-        by_month[i].append([cidx[r.cell], int(r.m), int(r.n), int(round(hv * 10))])
+        mix = lc_lookup.get((r.cell, i), (0, 0, 0, 0))
+        by_month[i].append([cidx[r.cell], int(r.m), int(r.n), int(round(hv * 10)), int(mix[0]), int(mix[1]), int(mix[2])])
 
     meta = {
         "title": "BRASA harmonized burning activity, Argentina",
@@ -246,6 +294,7 @@ def main():
             "NASA FIRMS MODIS Collection 6.1 Active Fire (MCD14ML), Terra and Aqua",
             "NASA FIRMS VIIRS 375 m Active Fire (VNP14IMG), Suomi NPP",
             "NASA FIRMS VIIRS 375 m Active Fire (VJ114IMG), NOAA-20",
+            "NASA MODIS Land Cover Type MCD12Q1 v061 (LP DAAC, via AppEEARS)",
         ],
     }
     validation = {
@@ -256,7 +305,8 @@ def main():
         "monthly": [{"m": f"{v.y}-{v.mo:02d}", "obs": round(v.obs), "pred": round(v.pred)} for v in vm.itertuples()],
     }
     cells_out = {"cells": cells, "centers": [[round(a, 3), round(b, 3)] for a, b in centers],
-                 "fields": ["cell", "modis", "naive", "harmonized_x10"], "months": by_month}
+                 "fields": ["cell", "modis", "naive", "harmonized_x10", "cropland_pct", "forest_pct", "grass_shrub_pct"],
+                 "landcover": "NASA MODIS MCD12Q1 v061 LC_Type1 (IGBP), matched to each detection's year", "months": by_month}
 
     for name, obj in [("meta.json", meta), ("validation.json", validation), ("cells.json", cells_out)]:
         p = os.path.join(out, name)

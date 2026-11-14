@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { Dataset, Mode } from './data'
-import { MONTH_NAMES, REGIONS, anomalies, fmt, loadData, pick, rankOf, regionSeries, season, ym } from './data'
+import { LAND, MONTH_NAMES, REGIONS, anomalies, fmt, loadData, pick, rankOf, regionSeries, season, ym } from './data'
 import { rampCss } from './colors'
 import { useStore } from './store'
 import MapView from './components/MapView'
 import Calendar from './components/Calendar'
 import AnnualChart from './components/AnnualChart'
 import ValidationChart from './components/ValidationChart'
+import WhatsBurning from './components/WhatsBurning'
+import RightNow from './components/RightNow'
 
 const MODES: { id: Mode; name: string }[] = [
   { id: 'modis', name: 'Raw MODIS' },
@@ -96,6 +98,11 @@ function Dashboard({ ds }: { ds: Dataset }) {
   const values = pick(series, s.mode)
   const { z, typical } = useMemo(() => anomalies(months, values), [months, values])
   const seas = useMemo(() => season(months, series.harm), [months, series.harm])
+  const recordByMonth = useMemo(() => {
+    const r = new Array(12).fill(0)
+    months.forEach((k, i) => { const mm = ym(k).m - 1; r[mm] = Math.max(r[mm], series.harm[i]) })
+    return r
+  }, [months, series.harm])
 
   const { y, m } = ym(months[monthIdx])
   const cur = values[monthIdx]
@@ -155,6 +162,8 @@ function Dashboard({ ds }: { ds: Dataset }) {
           </div>
         </section>
 
+        <RightNow bbox={region.bbox} regionName={region.name} typicalByMonth={seas.clim} recordByMonth={recordByMonth} />
+
         {/* Time bar */}
         <section className="panel flex flex-wrap items-center gap-4 px-4 py-3">
           <button onClick={() => s.setPlaying(!s.playing)} aria-label={s.playing ? 'Pause' : 'Play through time'}
@@ -176,16 +185,33 @@ function Dashboard({ ds }: { ds: Dataset }) {
           <div className="panel flex min-h-[460px] flex-[1_1_520px] flex-col gap-2 p-3">
             <div className="flex items-center justify-between px-1">
               <h2 className="font-display text-base font-semibold">Fire activity · {MONTH_NAMES[m - 1]} {y}</h2>
-              <label className="flex cursor-pointer items-center gap-2 text-xs text-soft">
-                <input type="checkbox" checked={s.extruded} onChange={(e) => s.setExtruded(e.target.checked)} /> 3D view
-              </label>
+              <div className="flex items-center gap-3">
+                <div className="flex rounded-lg border border-line p-0.5 text-xs">
+                  {(['fire', 'land'] as const).map((c) => (
+                    <button key={c} onClick={() => s.setColorBy(c)} aria-pressed={s.colorBy === c}
+                      className={`rounded-md px-2.5 py-1 font-semibold ${s.colorBy === c ? 'bg-[#2A1A0E] text-fire-soft' : 'text-soft'}`}>
+                      {c === 'fire' ? 'Fire intensity' : 'What’s burning'}
+                    </button>
+                  ))}
+                </div>
+                <label className="flex cursor-pointer items-center gap-2 text-xs text-soft">
+                  <input type="checkbox" checked={s.extruded} onChange={(e) => s.setExtruded(e.target.checked)} /> 3D
+                </label>
+              </div>
             </div>
             <div className="relative min-h-[420px] flex-1"><MapView ds={ds} bbox={region.bbox} /></div>
+            {s.colorBy === 'land' ? (
+              <div className="flex flex-wrap items-center gap-4 px-1 text-[11px] text-soft">
+                {LAND.map((l) => <span key={l.key} className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm" style={{ background: l.color }} />{l.name}</span>)}
+                <span className="text-muted">brighter = more days burning</span>
+              </div>
+            ) : (
             <div className="flex items-center gap-2 px-1 font-mono text-[11px] text-muted">
               <span>1 day</span>
               <div className="h-2 flex-1 rounded" style={{ background: `linear-gradient(90deg, ${[0.15, 0.4, 0.6, 0.8, 1].map(rampCss).join(',')})` }} />
               <span>whole month burning</span>
             </div>
+            )}
           </div>
 
           <div className="flex min-w-0 flex-[1_1_380px] flex-col gap-4">
@@ -237,6 +263,8 @@ function Dashboard({ ds }: { ds: Dataset }) {
           </div>
         </section>
 
+        <WhatsBurning months={months} series={series} monthIdx={monthIdx} regionName={region.name} />
+
         {/* Calendar */}
         <section className="panel flex flex-col gap-2 p-4">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -271,8 +299,9 @@ function Dashboard({ ds }: { ds: Dataset }) {
               <li><b className="text-text">Calibrate.</b> On 2012–2025, when both sensors flew, fit log(VIIRS) = a<sub>month</sub> + b·log(MODIS). b = {ds.meta.models.modis_to_viirs.b.toFixed(2)}.</li>
               <li><b className="text-text">Extend.</b> Before 2012, MODIS is scaled to VIIRS-equivalent (Terra alone before Aqua in mid-2002). From 2012, VIIRS is used directly; NOAA-20 fills gaps.</li>
               <li><b className="text-text">Validate.</b> Leave-one-year-out test, shown on the left.</li>
+              <li><b className="text-text">Classify.</b> Each detection is matched to NASA’s MODIS land cover map (MCD12Q1) for its year to separate cropland burning from forest and grassland fires.</li>
             </ol>
-            <p className="text-xs text-muted">Data: NASA FIRMS MODIS C6.1 and VIIRS 375 m (S-NPP, NOAA-20) active fire archives, {fmt(5669609)} detections. Basemap: NASA GIBS VIIRS Black Marble.</p>
+            <p className="text-xs text-muted">Data: NASA FIRMS MODIS C6.1 and VIIRS 375 m (S-NPP, NOAA-20) active fire archives, {fmt(5669609)} detections · NASA MODIS MCD12Q1 land cover · NASA FIRMS near-real-time VIIRS · NASA GIBS VIIRS Black Marble basemap.</p>
           </div>
         </section>
 

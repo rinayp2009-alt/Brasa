@@ -29,7 +29,7 @@ export interface Validation {
 export interface Cells {
   cells: string[]
   centers: [number, number][] // [lat, lon]
-  months: [number, number, number, number][][] // [cellIdx, modis, naive, harm*10]
+  months: number[][][] // per month: rows of [cellIdx, modis, naive, harm*10, crop%, forest%, grass%]
 }
 
 export interface Dataset {
@@ -77,9 +77,18 @@ export interface RegionSeries {
   harm: number[]
   lo: number[]
   hi: number[]
+  crop: number[]
+  forest: number[]
+  grass: number[]
   cellMask: Uint8Array
   nCells: number
 }
+
+export const LAND = [
+  { key: 'crop', name: 'Cropland & farms', color: '#E8C547', note: 'Agricultural burning' },
+  { key: 'forest', name: 'Forest & woodland', color: '#3FAE78', note: 'Wildfire in trees' },
+  { key: 'grass', name: 'Grass, shrub & wetland', color: '#FF8A3D', note: 'Wildland and grazing fires' },
+] as const
 
 /** Sum every cell inside the box, month by month, for each record. */
 export function regionSeries(ds: Dataset, bbox: BBox | null): RegionSeries {
@@ -91,16 +100,19 @@ export function regionSeries(ds: Dataset, bbox: BBox | null): RegionSeries {
     if (inBox(lat, lon, bbox)) { mask[i] = 1; nCells++ }
   })
   const modis = new Array(n).fill(0), naive = new Array(n).fill(0), harm = new Array(n).fill(0)
+  const crop = new Array(n).fill(0), forest = new Array(n).fill(0), grass = new Array(n).fill(0)
   cells.months.forEach((rows, t) => {
     for (const r of rows) {
       if (!mask[r[0]]) continue
-      modis[t] += r[1]; naive[t] += r[2]; harm[t] += r[3] / 10
+      const h = r[3] / 10
+      modis[t] += r[1]; naive[t] += r[2]; harm[t] += h
+      crop[t] += h * (r[4] || 0) / 100; forest[t] += h * (r[5] || 0) / 100; grass[t] += h * (r[6] || 0) / 100
     }
   })
   // uncertainty band: national ratio of band to value, applied to the region
   const lo = harm.map((v, t) => (meta.national.harmonized[t] ? v * meta.national.lo[t] / meta.national.harmonized[t] : v))
   const hi = harm.map((v, t) => (meta.national.harmonized[t] ? v * meta.national.hi[t] / meta.national.harmonized[t] : v))
-  return { modis, naive, harm, lo, hi, cellMask: mask, nCells }
+  return { modis, naive, harm, lo, hi, crop, forest, grass, cellMask: mask, nCells }
 }
 
 export function pick(s: RegionSeries, mode: Mode) {

@@ -1,6 +1,18 @@
 import { create } from 'zustand'
 import type { BBox, Mode } from './data'
 
+export interface LiveData {
+  ok: boolean
+  error?: string
+  source?: string
+  days?: number
+  from?: string
+  to?: string
+  detections?: number
+  cellDays?: [string, string][]
+  fetched?: string
+}
+
 interface State {
   mode: Mode
   regionId: string // preset id or 'custom'
@@ -10,6 +22,12 @@ interface State {
   drawing: boolean
   draftCorner: [number, number] | null
   extruded: boolean
+  colorBy: 'fire' | 'land'
+  showLive: boolean
+  live: LiveData | null
+  setColorBy: (c: 'fire' | 'land') => void
+  setShowLive: (v: boolean) => void
+  setLive: (l: LiveData | null) => void
   setMode: (m: Mode) => void
   setRegion: (id: string) => void
   setCustomBox: (b: BBox) => void
@@ -32,6 +50,12 @@ export const useStore = create<State>((set) => ({
   drawing: false,
   draftCorner: null,
   extruded: false,
+  colorBy: 'fire',
+  showLive: false,
+  live: null,
+  setColorBy: (colorBy) => set({ colorBy }),
+  setShowLive: (showLive) => set({ showLive }),
+  setLive: (live) => set({ live }),
   setMode: (mode) => set({ mode }),
   setRegion: (regionId) => set({ regionId, drawing: false, draftCorner: null }),
   setCustomBox: (customBox) => set({ customBox, regionId: 'custom', drawing: false, draftCorner: null }),
