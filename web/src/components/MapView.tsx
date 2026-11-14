@@ -59,9 +59,9 @@ export default function MapView({ ds, bbox }: Props) {
     let target = { ...INITIAL_VIEW }
     if (bbox) {
       const span = Math.max(bbox.east - bbox.west, (bbox.north - bbox.south) * 1.2)
-      target = { ...target, longitude: (bbox.west + bbox.east) / 2, latitude: (bbox.south + bbox.north) / 2, zoom: Math.min(7.5, Math.log2(560 / span)) }
+      target = { ...target, longitude: (bbox.west + bbox.east) / 2, latitude: (bbox.south + bbox.north) / 2, zoom: Math.min(7, Math.log2(300 / span)) }
     }
-    setViewState((v) => ({ ...v, ...target, pitch: extruded ? 45 : 0, transitionDuration: 1200, transitionInterpolator: new FlyToInterpolator() }))
+    setViewState(() => ({ ...target, pitch: extruded ? 45 : 0, transitionDuration: 1200, transitionInterpolator: new FlyToInterpolator() }))
   }, [bbox?.west, bbox?.east, bbox?.north, bbox?.south, extruded]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const hexes: Hex[] = useMemo(() => {
@@ -133,8 +133,7 @@ export default function MapView({ ds, bbox }: Props) {
   return (
     <div className="relative h-full w-full overflow-hidden rounded-xl" style={{ cursor: drawing ? 'crosshair' : undefined }}>
       <DeckGL
-        viewState={viewState}
-        onViewStateChange={({ viewState: v }) => setViewState(v as MapViewState)}
+        initialViewState={viewState}
         controller={{ dragRotate: true }}
         layers={layers}
         onClick={onClick}
