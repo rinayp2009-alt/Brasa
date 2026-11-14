@@ -9,6 +9,7 @@ import AnnualChart from './components/AnnualChart'
 import ValidationChart from './components/ValidationChart'
 import WhatsBurning from './components/WhatsBurning'
 import RightNow from './components/RightNow'
+import Story from './components/Story'
 
 const MODES: { id: Mode; name: string }[] = [
   { id: 'modis', name: 'Raw MODIS' },
@@ -129,7 +130,13 @@ function Dashboard({ ds }: { ds: Dataset }) {
               <p className="text-[13px] text-muted">Harmonized burning activity calendar · NASA MODIS + VIIRS · Argentina 2000–2025</p>
             </div>
           </div>
-          <a href="#method" className="rounded-full border border-line px-4 py-2 text-sm text-soft no-underline hover:border-fire hover:text-fire">How it works</a>
+          <div className="flex flex-wrap gap-2">
+            <button onClick={() => s.setStoryStep(0)} className="flex min-h-10 items-center gap-2 rounded-full bg-fire px-4 text-sm font-semibold text-[#120A04] shadow-[0_0_24px_rgba(255,138,61,0.35)]">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4l13 8-13 8z" /></svg>
+              Take the 60-second tour
+            </button>
+            <a href="#method" className="flex min-h-10 items-center rounded-full border border-line px-4 text-sm text-soft no-underline hover:border-fire hover:text-fire">How it works</a>
+          </div>
         </header>
 
         {/* Controls */}
@@ -305,6 +312,7 @@ function Dashboard({ ds }: { ds: Dataset }) {
           </div>
         </section>
 
+        <Story months={months} />
         <footer className="text-center text-xs text-muted">BRASA · NASA Space Apps Challenge 2026 · Harmonization of MODIS and VIIRS Hot Spots</footer>
       </div>
     </div>

@@ -23,6 +23,8 @@ interface State {
   draftCorner: [number, number] | null
   extruded: boolean
   colorBy: 'fire' | 'land'
+  storyStep: number | null
+  setStoryStep: (n: number | null) => void
   showLive: boolean
   live: LiveData | null
   setColorBy: (c: 'fire' | 'land') => void
@@ -51,6 +53,8 @@ export const useStore = create<State>((set) => ({
   draftCorner: null,
   extruded: false,
   colorBy: 'fire',
+  storyStep: null,
+  setStoryStep: (storyStep) => set({ storyStep }),
   showLive: false,
   live: null,
   setColorBy: (colorBy) => set({ colorBy }),

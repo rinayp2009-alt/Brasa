@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import DeckGL from '@deck.gl/react'
 import { TileLayer, H3HexagonLayer } from '@deck.gl/geo-layers'
 import { BitmapLayer, PolygonLayer } from '@deck.gl/layers'
-import type { PickingInfo } from '@deck.gl/core'
+import type { PickingInfo, MapViewState } from '@deck.gl/core'
+import { FlyToInterpolator } from '@deck.gl/core'
 import type { BBox, Dataset, Mode } from '../data'
 import { fmt } from '../data'
 import { ramp } from '../colors'
@@ -51,6 +52,17 @@ function boxPolygon(b: BBox) {
 export default function MapView({ ds, bbox }: Props) {
   const { mode, monthIdx, drawing, draftCorner, setDraftCorner, setCustomBox, extruded, colorBy, showLive, live } = useStore()
   const [hover, setHover] = useState<{ x: number; y: number; text: string } | null>(null)
+  const [viewState, setViewState] = useState<MapViewState>(INITIAL_VIEW)
+
+  // fly to the selected area (or back to the whole country)
+  useEffect(() => {
+    let target = { ...INITIAL_VIEW }
+    if (bbox) {
+      const span = Math.max(bbox.east - bbox.west, (bbox.north - bbox.south) * 1.2)
+      target = { ...target, longitude: (bbox.west + bbox.east) / 2, latitude: (bbox.south + bbox.north) / 2, zoom: Math.min(7.5, Math.log2(560 / span)) }
+    }
+    setViewState((v) => ({ ...v, ...target, pitch: extruded ? 45 : 0, transitionDuration: 1200, transitionInterpolator: new FlyToInterpolator() }))
+  }, [bbox?.west, bbox?.east, bbox?.north, bbox?.south, extruded]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const hexes: Hex[] = useMemo(() => {
     const rows = ds.cells.months[monthIdx] || []
@@ -121,7 +133,8 @@ export default function MapView({ ds, bbox }: Props) {
   return (
     <div className="relative h-full w-full overflow-hidden rounded-xl" style={{ cursor: drawing ? 'crosshair' : undefined }}>
       <DeckGL
-        initialViewState={{ ...INITIAL_VIEW, pitch: extruded ? 45 : 0 }}
+        viewState={viewState}
+        onViewStateChange={({ viewState: v }) => setViewState(v as MapViewState)}
         controller={{ dragRotate: true }}
         layers={layers}
         onClick={onClick}
