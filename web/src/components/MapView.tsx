@@ -81,7 +81,7 @@ export default function MapView({ ds, bbox }: Props) {
   const layers = [
     rasterLayer('basemap', GIBS, 8),
     new H3HexagonLayer<Hex>({
-      id: 'fire',
+      id: extruded ? 'fire-3d' : 'fire-2d', // fresh layer when geometry changes (avoids stale color buffers)
       data: hexes,
       getHexagon: (d) => d.hex,
       getFillColor: (d) => {
@@ -99,7 +99,6 @@ export default function MapView({ ds, bbox }: Props) {
       stroked: false,
       pickable: true,
       updateTriggers: { getFillColor: [bbox, mode, colorBy], getElevation: [mode] },
-      transitions: { getFillColor: 250, getElevation: 250 },
       onHover: (info: PickingInfo<Hex>) => setHover(info.object ? { x: info.x, y: info.y, text: `${fmt(info.object.v)} fire-active days · ${LAND_NAMES[info.object.lc]}` } : null),
     }),
     showLive && live?.cellDays && new H3HexagonLayer<{ hex: string; n: number }>({
