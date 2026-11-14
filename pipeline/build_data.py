@@ -308,6 +308,20 @@ def main():
                  "fields": ["cell", "modis", "naive", "harmonized_x10", "cropland_pct", "forest_pct", "grass_shrub_pct"],
                  "landcover": "NASA MODIS MCD12Q1 v061 LC_Type1 (IGBP), matched to each detection's year", "months": by_month}
 
+    # cells with persistent non-vegetation heat (gas flares, industry, volcanoes). The live
+    # near-real-time feed has no "type" field, so the app removes these cells from it.
+    con = duckdb.connect()
+    st = con.sql(f"""select try_cast(latitude as double) lat, try_cast(longitude as double) lon, acq_date d
+                    from read_csv('{firms}/viirs-*/*.csv', all_varchar=true) where type in ('1','2','3')""").df()
+    st["cell"] = [h3.latlng_to_cell(a, b, RES) for a, b in zip(st.lat.values, st.lon.values)]
+    days = st.groupby("cell").d.nunique()
+    static_cells = sorted(days[days >= 20].index.tolist())
+    api_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "web", "api")
+    os.makedirs(api_dir, exist_ok=True)
+    with open(os.path.join(api_dir, "static_cells.json"), "w") as f:
+        json.dump(static_cells, f)
+    print(f"{len(static_cells)} static heat-source cells written for the live filter")
+
     for name, obj in [("meta.json", meta), ("validation.json", validation), ("cells.json", cells_out)]:
         p = os.path.join(out, name)
         with open(p, "w") as f:
