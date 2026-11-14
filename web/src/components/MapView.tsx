@@ -10,8 +10,8 @@ import { useStore } from '../store'
 
 // NASA GIBS: VIIRS Black Marble night lights as the basemap
 const GIBS = 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/VIIRS_Black_Marble/default/2016-01-01/GoogleMapsCompatible_Level8/{z}/{y}/{x}.png'
-// CARTO labels on top for place names and borders
-const LABELS = 'https://basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}.png'
+// NASA GIBS reference layer: coastlines and country borders
+const BORDERS = 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/Reference_Features_15m/default/GoogleMapsCompatible_Level13/{z}/{y}/{x}.png'
 
 const INITIAL_VIEW = { longitude: -64.5, latitude: -38.5, zoom: 3.4, pitch: 0, bearing: 0 }
 
@@ -30,6 +30,7 @@ function rasterLayer(id: string, url: string, maxZoom: number, opacity = 1) {
     maxZoom,
     tileSize: 256,
     opacity,
+    onTileError: () => {},
     renderSubLayers: (props) => {
       const { boundingBox } = props.tile
       return new BitmapLayer(props, {
@@ -61,7 +62,7 @@ export default function MapView({ ds, bbox }: Props) {
 
   const layers = [
     rasterLayer('basemap', GIBS, 8),
-    rasterLayer('labels', LABELS, 10, 0.55),
+    rasterLayer('borders', BORDERS, 9, 0.5),
     new H3HexagonLayer<Hex>({
       id: 'fire',
       data: hexes,
@@ -120,7 +121,7 @@ export default function MapView({ ds, bbox }: Props) {
         </div>
       )}
       <div className="pointer-events-none absolute bottom-2 right-3 text-[10px] text-muted">
-        Basemap: NASA GIBS VIIRS Black Marble · Labels © CARTO © OpenStreetMap
+        Basemap: NASA GIBS VIIRS Black Marble · Borders: NASA GIBS
       </div>
     </div>
   )
