@@ -10,6 +10,7 @@ import ValidationChart from './components/ValidationChart'
 import WhatsBurning from './components/WhatsBurning'
 import RightNow from './components/RightNow'
 import Story from './components/Story'
+import SeasonShift from './components/SeasonShift'
 
 const MODES: { id: Mode; name: string }[] = [
   { id: 'modis', name: 'Raw MODIS' },
@@ -270,7 +271,10 @@ function Dashboard({ ds }: { ds: Dataset }) {
           </div>
         </section>
 
-        <WhatsBurning months={months} series={series} monthIdx={monthIdx} regionName={region.name} />
+        <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <WhatsBurning months={months} series={series} monthIdx={monthIdx} regionName={region.name} />
+          <SeasonShift months={months} harm={series.harm} peakMonth={seas.peak} regionName={region.name} />
+        </section>
 
         {/* Calendar */}
         <section className="panel flex flex-col gap-2 p-4">
