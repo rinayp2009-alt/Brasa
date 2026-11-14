@@ -84,11 +84,14 @@ export async function GET() {
       const m = (byMonth[mk] ||= new Map())
       m.set(cell, (m.get(cell) || 0) + 1)
     }
+    // burning cell-days per date, so gaps in the feed are easy to spot
+    const perDay: Record<string, number> = {}
+    for (const s of seen) { const d = s.slice(s.indexOf('|') + 1); perDay[d] = (perDay[d] || 0) + 1 }
     const months: Record<string, [string, number][]> = {}
     for (const [mk, m] of Object.entries(byMonth)) months[mk] = Array.from(m.entries())
 
     return Response.json(
-      { ok: failed < jobs.length / 4, year, to: last, spUntil: spMax, requests: jobs.length, failed, detections, removedStatic, months, fetched: new Date().toISOString() },
+      { ok: failed < jobs.length / 4, year, to: last, spUntil: spMax, requests: jobs.length, failed, detections, removedStatic, perDay, months, fetched: new Date().toISOString() },
       { headers: { 'Cache-Control': 's-maxage=21600, stale-while-revalidate=86400' } },
     )
   } catch (e) {
