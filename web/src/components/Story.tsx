@@ -20,7 +20,7 @@ const STEPS: Step[] = [
   },
   {
     title: '2 · The fix',
-    text: 'BRASA counts burning hexagon-days and calibrates MODIS to VIIRS on the 14 years both flew. The fake jumps disappear, and every year from 2000 to 2025 can finally be compared fairly. Tested year by year: 3.8% average error.',
+    text: 'BRASA counts burning hexagon-days and calibrates MODIS to VIIRS on the 14 years both flew. The fake jumps disappear, and every year from 2000 to 2025 can finally be compared fairly. Tested year by year: 3.5% average error for the whole country.',
     region: 'argentina', mode: 'harm', month: '2013-09', colorBy: 'fire',
   },
   {

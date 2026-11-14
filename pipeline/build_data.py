@@ -199,15 +199,41 @@ def main():
     print(f"MODIS->VIIRS slope b={model_m['b']:.3f} sigma={model_m['sigma']:.3f}  "
           f"Terra-only b={model_t['b']:.3f}  NOAA20->SNPP b={model_j['b']:.3f}")
 
-    # ---- leave-one-year-out validation -------------------------------------------------
+    # ---- local adjustment ---------------------------------------------------------------
+    # The national model sets each month's VIIRS/MODIS ratio. Fire size differs between
+    # places (small wetland burns vs. large forest fires), so each H3 resolution-3 area
+    # (~12,000 km2) learns a correction from the overlap years, shrunk toward 1 so that
+    # areas with few fires stay close to the national model.
+    ALPHA = 150.0
+    cm["parent"] = [h3.cell_to_parent(c, 3) for c in cm.cell]
+    cm["y"] = [MONTHS[i][0] for i in cm.mi]
+    cm["mo"] = [MONTHS[i][1] for i in cm.mi]
+    cov = cm[[MONTHS[i] >= VIIRS_START for i in cm.mi]]
+
+    def national_ratio(model, nat_rows):
+        return {int(i): (predict(model, r.m, int(r.mo)) / r.m if r.m > 0 else 0.0) for i, r in nat_rows.iterrows()}
+
+    def local_k(model, cell_rows, nat_rows):
+        R = national_ratio(model, nat_rows)
+        pred = cell_rows.m.values * np.array([R.get(int(i), 0.0) for i in cell_rows.mi])
+        agg = cell_rows.assign(pred=pred).groupby("parent")[["s", "pred"]].sum()
+        return ((agg.s + ALPHA) / (agg.pred + ALPHA)).to_dict()
+
+    local = local_k(model_m, cov, ov)
+    print(f"local adjustment: {len(local)} areas, factor range {min(local.values()):.2f}-{max(local.values()):.2f}")
+
+    # ---- leave-one-year-out validation (national model + local adjustment) ---------------
     years = sorted(set(ov.y))
     val_monthly = []
     for yv in years:
-        train = ov[ov.y != yv]
-        mdl = fit("m", "s", train)
-        for i, row in ov[ov.y == yv].iterrows():
-            val_monthly.append({"i": int(i), "y": int(row.y), "mo": int(row.mo),
-                                "obs": float(row.s), "pred": predict(mdl, row.m, int(row.mo))})
+        mdl = fit("m", "s", ov[ov.y != yv])
+        k = local_k(mdl, cov[cov.y != yv], ov[ov.y != yv])
+        test = cov[cov.y == yv]
+        R = national_ratio(mdl, ov[ov.y == yv])
+        pred = test.m.values * np.array([R.get(int(i), 0.0) for i in test.mi]) * np.array([k.get(pp, 1.0) for pp in test.parent])
+        tp = test.assign(pred=pred).groupby("mi")[["s", "pred"]].sum()
+        for i, row in tp.iterrows():
+            val_monthly.append({"i": int(i), "y": int(MONTHS[i][0]), "mo": int(MONTHS[i][1]), "obs": float(row.s), "pred": float(row.pred)})
     vm = pd.DataFrame(val_monthly)
     va = vm.groupby("y")[["obs", "pred"]].sum().reset_index()
     r_month = float(np.corrcoef(vm.obs, vm.pred)[0, 1])
@@ -267,13 +293,21 @@ def main():
         elif src == "noaa20":
             hv = predict(model_j, nat.loc[i].j, MONTHS[i][1]) * (r.j / nat.loc[i].j) if nat.loc[i].j else 0
         elif src == "modis":
-            hv = r.m * factor[i]
+            hv = r.m * factor[i] * local.get(r.parent, 1.0)
         else:
-            hv = r.t * factor[i]
+            hv = r.t * factor[i] * local.get(r.parent, 1.0)
         if r.m == 0 and r.n == 0 and hv == 0:
             continue
         mix = lc_lookup.get((r.cell, i), (0, 0, 0, 0))
         by_month[i].append([cidx[r.cell], int(r.m), int(r.n), int(round(hv * 10)), int(mix[0]), int(mix[1]), int(mix[2])])
+
+    nat_h = np.zeros(len(MONTHS))
+    for i, rows in enumerate(by_month):
+        nat_h[i] = sum(r[3] for r in rows) / 10
+    for i in range(len(MONTHS)):
+        if source[i] in ("modis", "terra") and harm[i] > 0:
+            scale = nat_h[i] / harm[i]
+            harm[i] = round(nat_h[i], 1); lo[i] = round(lo[i] * scale, 1); hi[i] = round(hi[i] * scale, 1)
 
     meta = {
         "title": "BRASA harmonized burning activity, Argentina",
@@ -288,6 +322,7 @@ def main():
         "national": {"modis": nat.m.astype(int).tolist(), "terra": nat.t.astype(int).tolist(),
                      "snpp": nat.s.astype(int).tolist(), "noaa20": nat.j.astype(int).tolist(),
                      "naive": nat.n.astype(int).tolist(), "harmonized": harm, "lo": lo, "hi": hi},
+        "local_adjustment": {"h3_parent_resolution": 3, "shrinkage_cell_days": ALPHA, "areas": len(local)},
         "models": {"modis_to_viirs": model_m, "terra_to_viirs": model_t, "noaa20_to_snpp": model_j},
         "cleaning": {"type": 0, "modis_min_confidence": MODIS_MIN_CONF, "viirs_confidence": list(VIIRS_OK)},
         "sources": [
@@ -298,7 +333,7 @@ def main():
         ],
     }
     validation = {
-        "method": "leave-one-year-out over the 2012-2025 MODIS/VIIRS overlap",
+        "method": "leave-one-year-out over the 2012-2025 MODIS/VIIRS overlap (national model + local adjustment refitted without the held-out year)",
         "r_monthly": r_month, "r_log_monthly": r_log, "r_annual": r_year,
         "mape_annual": mape_year, "median_ape_monthly_busy": mape_month,
         "annual": [{"year": int(a.y), "obs": round(a.obs), "pred": round(a.pred)} for a in va.itertuples()],

@@ -11,6 +11,7 @@ import WhatsBurning from './components/WhatsBurning'
 import RightNow from './components/RightNow'
 import Story from './components/Story'
 import SeasonShift from './components/SeasonShift'
+import Accuracy from './components/Accuracy'
 
 const MODES: { id: Mode; name: string }[] = [
   { id: 'modis', name: 'Raw MODIS' },
@@ -308,6 +309,7 @@ function Dashboard({ ds }: { ds: Dataset }) {
               <li><b className="text-text">Clean.</b> Vegetation fires only; MODIS confidence ≥ 30, VIIRS nominal or high. Volcanoes, gas flares and offshore sources removed.</li>
               <li><b className="text-text">Grid.</b> Every detection goes into an equal-area H3 hexagon (~250 km²). We count fire-active hexagon-days, which removes most of the 1 km vs 375 m pixel difference.</li>
               <li><b className="text-text">Calibrate.</b> On 2012–2025, when both sensors flew, fit log(VIIRS) = a<sub>month</sub> + b·log(MODIS). b = {ds.meta.models.modis_to_viirs.b.toFixed(2)}.</li>
+              <li><b className="text-text">Adjust locally.</b> Fire sizes differ from place to place, so each ~12,000 km² area learns a small correction from the overlap years, pulled toward the national formula where fires are rare.</li>
               <li><b className="text-text">Extend.</b> Before 2012, MODIS is scaled to VIIRS-equivalent (Terra alone before Aqua in mid-2002). From 2012, VIIRS is used directly; NOAA-20 fills gaps.</li>
               <li><b className="text-text">Validate.</b> Leave-one-year-out test, shown on the left.</li>
               <li><b className="text-text">Classify.</b> Each detection is matched to NASA’s MODIS land cover map (MCD12Q1) for its year to separate cropland burning from forest and grassland fires.</li>
@@ -317,6 +319,8 @@ function Dashboard({ ds }: { ds: Dataset }) {
         </section>
 
         <Story months={months} />
+        {ds.robustness && <section id="accuracy"><Accuracy r={ds.robustness} /></section>}
+
         <footer className="text-center text-xs text-muted">BRASA · NASA Space Apps Challenge 2026 · Harmonization of MODIS and VIIRS Hot Spots</footer>
       </div>
     </div>

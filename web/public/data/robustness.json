@@ -1,0 +1,244 @@
+{
+ "variants": {
+  "A_national": {
+   "Argentina": {
+    "annual_mape": 0.03757584524395371,
+    "annual_r": 0.9850564685511213,
+    "monthly_median_ape_busy": 0.06171692128708002,
+    "monthly_r": 0.9895254928785202
+   },
+   "Paran\u00e1 Delta": {
+    "annual_mape": 0.22717934811415222,
+    "annual_r": 0.9718499309321559,
+    "monthly_median_ape_busy": 0.23513241281928907,
+    "monthly_r": 0.9413876872761031
+   },
+   "C\u00f3rdoba Sierras": {
+    "annual_mape": 0.12264334783488992,
+    "annual_r": 0.9691439394389668,
+    "monthly_median_ape_busy": 0.24378332693241297,
+    "monthly_r": 0.9473513575818998
+   },
+   "Gran Chaco": {
+    "annual_mape": 0.12085139090628229,
+    "annual_r": 0.9886883256425861,
+    "monthly_median_ape_busy": 0.10307601764319482,
+    "monthly_r": 0.9917355279278216
+   },
+   "Andean Patagonia": {
+    "annual_mape": 0.16523655521629868,
+    "annual_r": 0.9940732807006887,
+    "monthly_median_ape_busy": 0.29785187127314394,
+    "monthly_r": 0.9873708800292829
+   }
+  },
+  "B_aqua": {
+   "Argentina": {
+    "annual_mape": 0.0446565017049601,
+    "annual_r": 0.9777732424112202,
+    "monthly_median_ape_busy": 0.0674787935832431,
+    "monthly_r": 0.9867150100413703
+   },
+   "Paran\u00e1 Delta": {
+    "annual_mape": 0.21459331494551476,
+    "annual_r": 0.9745531988611079,
+    "monthly_median_ape_busy": 0.2035938530324607,
+    "monthly_r": 0.945427165308655
+   },
+   "C\u00f3rdoba Sierras": {
+    "annual_mape": 0.12901095911153795,
+    "annual_r": 0.9599103594370741,
+    "monthly_median_ape_busy": 0.2495339552781443,
+    "monthly_r": 0.9416788457008733
+   },
+   "Gran Chaco": {
+    "annual_mape": 0.12254897791147445,
+    "annual_r": 0.9794709484415542,
+    "monthly_median_ape_busy": 0.08578689412601453,
+    "monthly_r": 0.9883266834076726
+   },
+   "Andean Patagonia": {
+    "annual_mape": 0.17002802198196657,
+    "annual_r": 0.9901039883183387,
+    "monthly_median_ape_busy": 0.3151870381501817,
+    "monthly_r": 0.9872957722562391
+   }
+  },
+  "C_daynight": {
+   "Argentina": {
+    "annual_mape": 0.040322408397936625,
+    "annual_r": 0.983210415581106,
+    "monthly_median_ape_busy": 0.07656240046412033,
+    "monthly_r": 0.9877759477997154
+   },
+   "Paran\u00e1 Delta": {
+    "annual_mape": 0.22376628262444517,
+    "annual_r": 0.9721924374364337,
+    "monthly_median_ape_busy": 0.23569402048314397,
+    "monthly_r": 0.9385301869089097
+   },
+   "C\u00f3rdoba Sierras": {
+    "annual_mape": 0.12225155076425819,
+    "annual_r": 0.9715698302656186,
+    "monthly_median_ape_busy": 0.2544015079618929,
+    "monthly_r": 0.9468763655436981
+   },
+   "Gran Chaco": {
+    "annual_mape": 0.12048543918077513,
+    "annual_r": 0.987888036777887,
+    "monthly_median_ape_busy": 0.10617880750264153,
+    "monthly_r": 0.9907617495231712
+   },
+   "Andean Patagonia": {
+    "annual_mape": 0.1627669308524556,
+    "annual_r": 0.9947977545114007,
+    "monthly_median_ape_busy": 0.29546114562304227,
+    "monthly_r": 0.9861974314534189
+   }
+  },
+  "D_landcover": {
+   "Argentina": {
+    "annual_mape": 0.03978202209851761,
+    "annual_r": 0.9857022128442323,
+    "monthly_median_ape_busy": 0.06048350620277508,
+    "monthly_r": 0.9892314720743667
+   },
+   "Paran\u00e1 Delta": {
+    "annual_mape": 0.23075937724641024,
+    "annual_r": 0.9712670397871969,
+    "monthly_median_ape_busy": 0.22676329814223706,
+    "monthly_r": 0.9412670099435334
+   },
+   "C\u00f3rdoba Sierras": {
+    "annual_mape": 0.1222647118161477,
+    "annual_r": 0.9654792475967924,
+    "monthly_median_ape_busy": 0.25432898735412995,
+    "monthly_r": 0.9447962101571884
+   },
+   "Gran Chaco": {
+    "annual_mape": 0.10932981204431876,
+    "annual_r": 0.987611755568746,
+    "monthly_median_ape_busy": 0.08356596011501492,
+    "monthly_r": 0.9913034729381276
+   },
+   "Andean Patagonia": {
+    "annual_mape": 0.14304430139591534,
+    "annual_r": 0.996114680619619,
+    "monthly_median_ape_busy": 0.25699738375557124,
+    "monthly_r": 0.9870367757543486
+   }
+  },
+  "E_landcover_daynight": {
+   "Argentina": {
+    "annual_mape": 0.04094671360820911,
+    "annual_r": 0.9829472878095271,
+    "monthly_median_ape_busy": 0.07414553729157022,
+    "monthly_r": 0.9879799474751954
+   },
+   "Paran\u00e1 Delta": {
+    "annual_mape": 0.2275312818285949,
+    "annual_r": 0.9720623328136786,
+    "monthly_median_ape_busy": 0.22428397127344096,
+    "monthly_r": 0.9397061278696801
+   },
+   "C\u00f3rdoba Sierras": {
+    "annual_mape": 0.12230158808748379,
+    "annual_r": 0.9677960608881248,
+    "monthly_median_ape_busy": 0.2549868889200285,
+    "monthly_r": 0.9452186386908771
+   },
+   "Gran Chaco": {
+    "annual_mape": 0.11070996900100771,
+    "annual_r": 0.9870788952054126,
+    "monthly_median_ape_busy": 0.1034089848134226,
+    "monthly_r": 0.990977485703163
+   },
+   "Andean Patagonia": {
+    "annual_mape": 0.14592979384438245,
+    "annual_r": 0.996675539571163,
+    "monthly_median_ape_busy": 0.2832255684601028,
+    "monthly_r": 0.9849012576945236
+   }
+  },
+  "F_landcover_local": {
+   "Argentina": {
+    "annual_mape": 0.03742421450507056,
+    "annual_r": 0.9853362628339898,
+    "monthly_median_ape_busy": 0.06368163073408954,
+    "monthly_r": 0.9901265080680787
+   },
+   "Paran\u00e1 Delta": {
+    "annual_mape": 0.23653035274975828,
+    "annual_r": 0.9757848650081503,
+    "monthly_median_ape_busy": 0.18458610079393672,
+    "monthly_r": 0.9442724342919959
+   },
+   "C\u00f3rdoba Sierras": {
+    "annual_mape": 0.13788289696200706,
+    "annual_r": 0.9560562843376935,
+    "monthly_median_ape_busy": 0.24105165457486888,
+    "monthly_r": 0.9460540189413981
+   },
+   "Gran Chaco": {
+    "annual_mape": 0.04034547004257781,
+    "annual_r": 0.9865947590860988,
+    "monthly_median_ape_busy": 0.06639640359128308,
+    "monthly_r": 0.9918644307750295
+   },
+   "Andean Patagonia": {
+    "annual_mape": 0.14867404565938494,
+    "annual_r": 0.9929715470432654,
+    "monthly_median_ape_busy": 0.26420655710018615,
+    "monthly_r": 0.9867703835339052
+   }
+  },
+  "G_national_local": {
+   "Argentina": {
+    "annual_mape": 0.035380196158840256,
+    "annual_r": 0.9850553663457873,
+    "monthly_median_ape_busy": 0.063834158457447,
+    "monthly_r": 0.9900617483713334
+   },
+   "Paran\u00e1 Delta": {
+    "annual_mape": 0.23604051375704477,
+    "annual_r": 0.975330741383115,
+    "monthly_median_ape_busy": 0.20503054446983676,
+    "monthly_r": 0.9437847683285704
+   },
+   "C\u00f3rdoba Sierras": {
+    "annual_mape": 0.14041934189979516,
+    "annual_r": 0.9605769201076296,
+    "monthly_median_ape_busy": 0.2454992863739245,
+    "monthly_r": 0.9481406335499714
+   },
+   "Gran Chaco": {
+    "annual_mape": 0.039043740473893314,
+    "annual_r": 0.9875344966523251,
+    "monthly_median_ape_busy": 0.06780207892742017,
+    "monthly_r": 0.9920932710228972
+   },
+   "Andean Patagonia": {
+    "annual_mape": 0.15300715632000203,
+    "annual_r": 0.9907113736804815,
+    "monthly_median_ape_busy": 0.2719440984446226,
+    "monthly_r": 0.9868861640238038
+   }
+  }
+ },
+ "extrapolation": {
+  "train 2019-2025 -> predict 2012-2014": {
+   "annual_mape": 0.020284965475780212,
+   "slope_b": 0.8829042498548991
+  },
+  "train 2012-2018 -> predict 2023-2025": {
+   "annual_mape": 0.03832907091866792,
+   "slope_b": 0.8780049534221871
+  }
+ },
+ "slope_by_period": {
+  "2012-2014": 0.8291180592280292,
+  "2015-2017": 0.9497435196581945,
+  "2018-2020": 0.8721441637876846,
+  "2021-2023": 0.8766355876574827
+ }
+}

@@ -32,19 +32,28 @@ export interface Cells {
   months: number[][][] // per month: rows of [cellIdx, modis, naive, harm*10, crop%, forest%, grass%]
 }
 
+type Scores = { annual_mape: number; annual_r: number; monthly_median_ape_busy: number; monthly_r: number }
+export interface Robustness {
+  variants: Record<string, Record<string, Scores>>
+  extrapolation: Record<string, { annual_mape: number; slope_b: number }>
+  slope_by_period: Record<string, number>
+}
+
 export interface Dataset {
   meta: Meta
   validation: Validation
   cells: Cells
+  robustness: Robustness | null
 }
 
 export async function loadData(): Promise<Dataset> {
-  const [meta, validation, cells] = await Promise.all([
+  const [meta, validation, cells, robustness] = await Promise.all([
     fetch('/data/meta.json').then((r) => r.json()),
     fetch('/data/validation.json').then((r) => r.json()),
     fetch('/data/cells.json').then((r) => r.json()),
+    fetch('/data/robustness.json').then((r) => r.json()).catch(() => null),
   ])
-  return { meta, validation, cells }
+  return { meta, validation, cells, robustness }
 }
 
 export interface BBox { west: number; south: number; east: number; north: number }
