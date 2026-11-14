@@ -30,7 +30,7 @@ export default function RightNow({ bbox, regionName, typicalByMonth, recordByMon
     const end = new Date(`${live.to}T12:00:00Z`)
     const mo = end.getUTCMonth()
     const daysInMonth = new Date(Date.UTC(end.getUTCFullYear(), mo + 1, 0)).getUTCDate()
-    const days = live.days || 7
+    const days = live.days || 5
     const typical = (typicalByMonth[mo] * days) / daysInMonth
     const record = (recordByMonth[mo] * days) / daysInMonth
     const ratio = typical > 0 ? n / typical : 0
@@ -55,7 +55,7 @@ export default function RightNow({ bbox, regionName, typicalByMonth, recordByMon
         <span className="label">{regionName}</span>
       </div>
 
-      {!live && <span className="text-sm text-muted">Fetching the last 7 days from NASA FIRMS…</span>}
+      {!live && <span className="text-sm text-muted">Fetching the last 5 days from NASA FIRMS…</span>}
       {live && !live.ok && <span className="text-sm text-muted">Live data unavailable: {live.error?.includes('FIRMS_MAP_KEY') ? 'the NASA FIRMS key is not set up yet' : live.error?.slice(0, 80)}.</span>}
 
       {stats && status && (
@@ -65,7 +65,7 @@ export default function RightNow({ bbox, regionName, typicalByMonth, recordByMon
             <span className="text-xs text-muted">fire-active cell-days, {live!.from} → {live!.to}</span>
           </div>
           <div className="text-sm text-soft">
-            Typical {MONTH_NAMES[stats.mo]} week: <b className="text-text">{fmt(stats.typical)}</b>
+            Typical {live!.days}-day stretch in {MONTH_NAMES[stats.mo]}: <b className="text-text">{fmt(stats.typical)}</b>
             {stats.typical > 0 && <> · <b className={stats.ratio >= 1.25 ? 'text-fire-soft' : 'text-text'}>{stats.ratio >= 1 ? '+' : '−'}{Math.round(Math.abs(stats.ratio - 1) * 100)}%</b></>}
           </div>
           <span className={`rounded-full px-3 py-1 text-sm font-semibold ${status.c}`}>{status.t}</span>

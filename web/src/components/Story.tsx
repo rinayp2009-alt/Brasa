@@ -40,7 +40,7 @@ const STEPS: Step[] = [
   },
   {
     title: '6 · Right now',
-    text: 'The top bar compares the last 7 days of live NASA detections with 25 years of history for the same month, so responders know at a glance whether this week is normal or dangerous. Now explore: pick any area, or draw your own.',
+    text: 'The top bar compares the last 5 days of live NASA detections with 25 years of history for the same month, so responders know at a glance whether this week is normal or dangerous. Now explore: pick any area, or draw your own.',
     region: 'argentina', mode: 'harm', month: '2020-09', colorBy: 'fire', live: true,
   },
 ]

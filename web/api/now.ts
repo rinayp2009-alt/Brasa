@@ -5,7 +5,7 @@
 import { latLngToCell } from 'h3-js'
 
 const BBOX = '-74,-56,-53,-21' // west,south,east,north around Argentina
-const DAYS = 7
+const DAYS = 5 // FIRMS area API allows 1-5 days
 const SOURCE = 'VIIRS_NOAA20_NRT' // NOAA-20 calibrates ~1:1 to S-NPP (slope 0.99 in our fit)
 
 export async function GET() {
