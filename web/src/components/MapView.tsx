@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import DeckGL from '@deck.gl/react'
 import { TileLayer, H3HexagonLayer } from '@deck.gl/geo-layers'
 import { BitmapLayer, PolygonLayer } from '@deck.gl/layers'
@@ -53,13 +53,15 @@ export default function MapView({ ds, bbox }: Props) {
   const { mode, monthIdx, drawing, draftCorner, setDraftCorner, setCustomBox, extruded, colorBy, showLive, live } = useStore()
   const [hover, setHover] = useState<{ x: number; y: number; text: string } | null>(null)
   const [viewState, setViewState] = useState<MapViewState>(INITIAL_VIEW)
+  const box = useRef<HTMLDivElement>(null)
 
   // fly to the selected area (or back to the whole country)
   useEffect(() => {
-    let target = { ...INITIAL_VIEW }
+    const w = box.current?.offsetWidth || 700
+    let target = { ...INITIAL_VIEW, zoom: w < 500 ? 2.6 : INITIAL_VIEW.zoom }
     if (bbox) {
       const span = Math.max(bbox.east - bbox.west, (bbox.north - bbox.south) * 1.2)
-      target = { ...target, longitude: (bbox.west + bbox.east) / 2, latitude: (bbox.south + bbox.north) / 2, zoom: Math.min(7, Math.log2(300 / span)) }
+      target = { ...target, longitude: (bbox.west + bbox.east) / 2, latitude: (bbox.south + bbox.north) / 2, zoom: Math.min(7, Math.log2(((box.current?.offsetWidth || 700) * 0.42) / span)) }
     }
     setViewState(() => ({ ...target, pitch: extruded ? 45 : 0, transitionDuration: 1200, transitionInterpolator: new FlyToInterpolator() }))
   }, [bbox?.west, bbox?.east, bbox?.north, bbox?.south, extruded]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -131,7 +133,7 @@ export default function MapView({ ds, bbox }: Props) {
   }
 
   return (
-    <div className="relative h-full w-full overflow-hidden rounded-xl" style={{ cursor: drawing ? 'crosshair' : undefined }}>
+    <div ref={box} className="relative h-full w-full overflow-hidden rounded-xl" style={{ cursor: drawing ? 'crosshair' : undefined }}>
       <DeckGL
         initialViewState={viewState}
         controller={{ dragRotate: true }}
