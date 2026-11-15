@@ -15,7 +15,7 @@ import Accuracy from './components/Accuracy'
 import InfoTip from './components/InfoTip'
 import Welcome from './components/Welcome'
 import RecordTracker from './components/RecordTracker'
-import { FULL_MONTHS, useT } from './i18n'
+import { FULL_MONTHS, PLURAL_MONTHS, useT } from './i18n'
 
 const MODES: { id: Mode; name: string; sub: string }[] = [
   { id: 'modis', name: 'Old satellite only', sub: 'MODIS' },
@@ -132,17 +132,18 @@ function Dashboard({ ds }: { ds: Dataset }) {
 
   // one plain-English sentence for the selected area and month
   const mName = FULL_MONTHS[s.lang][m - 1]
+  const mPlural = PLURAL_MONTHS[s.lang][m - 1]
   const headline = es
     ? (cur <= 0 ? `${mName} ${y} en ${rName}: no se detectaron fuegos.`
       : rank.rank === 1 ? `${mName} ${y} fue el peor ${mName} en ${rank.of} años en ${rName}.`
-      : extreme && rank.rank <= 4 ? `${mName} ${y} fue uno de los peores ${mName}s registrados en ${rName} (#${rank.rank} de ${rank.of}).`
+      : extreme && rank.rank <= 4 ? `${mName} ${y} fue uno de los peores ${mPlural} registrados en ${rName} (#${rank.rank} de ${rank.of}).`
       : extreme ? `${mName} ${y} estuvo muy por encima de un ${mName} normal en ${rName}.`
       : zc >= 1 || times >= 1.6 ? `${mName} ${y} tuvo más quema que un ${mName} normal en ${rName}.`
       : zc <= -1 || times <= 0.5 ? `${mName} ${y} fue más tranquilo que un ${mName} normal en ${rName}.`
       : `${mName} ${y} fue un ${mName} bastante normal en ${rName}.`)
     : (cur <= 0 ? `${mName} ${y} in ${rName}: no fires detected.`
       : rank.rank === 1 ? `${mName} ${y} was the worst ${mName} in ${rank.of} years in ${rName}.`
-      : extreme && rank.rank <= 4 ? `${mName} ${y} was one of the worst ${mName}s on record in ${rName} (#${rank.rank} of ${rank.of}).`
+      : extreme && rank.rank <= 4 ? `${mName} ${y} was one of the worst ${mPlural} on record in ${rName} (#${rank.rank} of ${rank.of}).`
       : extreme ? `${mName} ${y} was far above a normal ${mName} in ${rName}.`
       : zc >= 1 || times >= 1.6 ? `${mName} ${y} was busier than a normal ${mName} in ${rName}.`
       : zc <= -1 || times <= 0.5 ? `${mName} ${y} was quieter than a normal ${mName} in ${rName}.`

@@ -155,3 +155,8 @@ export const FULL_MONTHS = {
   en: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
   es: ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'],
 }
+
+export const PLURAL_MONTHS = {
+  en: ['Januaries', 'Februaries', 'Marches', 'Aprils', 'Mays', 'Junes', 'Julys', 'Augusts', 'Septembers', 'Octobers', 'Novembers', 'Decembers'],
+  es: ['eneros', 'febreros', 'marzos', 'abriles', 'mayos', 'junios', 'julios', 'agostos', 'septiembres', 'octubres', 'noviembres', 'diciembres'],
+}
