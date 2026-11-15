@@ -74,7 +74,7 @@ export async function GET() {
         seen.add(`${cell}|${c[iDate]}`)
       }
     }
-    for (let i = 0; i < jobs.length; i += 10) await Promise.all(jobs.slice(i, i + 10).map(run))
+    for (let i = 0; i < jobs.length; i += 22) await Promise.all(jobs.slice(i, i + 22).map(run))
 
     // per month: [hex, burning days]
     const byMonth: Record<string, Map<string, number>> = {}
@@ -92,7 +92,7 @@ export async function GET() {
 
     return Response.json(
       { ok: failed < jobs.length / 4, year, to: last, spUntil: spMax, requests: jobs.length, failed, detections, removedStatic, perDay, months, fetched: new Date().toISOString() },
-      { headers: { 'Cache-Control': 's-maxage=21600, stale-while-revalidate=86400' } },
+      { headers: { 'Cache-Control': 's-maxage=43200, stale-while-revalidate=604800' } },
     )
   } catch (e) {
     return Response.json({ ok: false, error: String(e) }, { status: 500 })

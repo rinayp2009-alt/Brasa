@@ -176,7 +176,7 @@ function Dashboard({ ds }: { ds: Dataset }) {
   }
 
   return (
-    <div className="min-h-screen px-4 pb-14 pt-5 sm:px-8">
+    <div className="min-h-screen overflow-x-clip px-4 pb-14 pt-5 sm:px-8">
       <div className="mx-auto flex max-w-[1400px] flex-col gap-4">
 
         {/* Header */}

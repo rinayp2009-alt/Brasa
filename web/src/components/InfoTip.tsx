@@ -7,7 +7,7 @@ export default function InfoTip({ text }: { text: string }) {
         i
       </button>
       <span role="tooltip"
-        className="pointer-events-none invisible absolute left-1/2 top-6 z-40 w-64 -translate-x-1/2 rounded-lg border border-line bg-ink px-3 py-2 text-left font-sans text-xs font-normal normal-case leading-relaxed tracking-normal text-soft opacity-0 shadow-xl transition group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
+        className="pointer-events-none absolute left-1/2 top-6 z-40 hidden w-64 max-w-[78vw] -translate-x-1/2 rounded-lg border border-line bg-ink px-3 py-2 text-left font-sans text-xs font-normal normal-case leading-relaxed tracking-normal text-soft shadow-xl group-focus-within:block group-hover:block">
         {text}
       </span>
     </span>
