@@ -2,6 +2,7 @@ import ReactECharts from 'echarts-for-react'
 import { MONTH_NAMES, fmt, ym } from '../data'
 import { ECHARTS_RAMP } from '../colors'
 import { useStore } from '../store'
+import { useAnimateOnChange } from '../useAnimateOnChange'
 
 interface Props {
   months: string[]
@@ -26,7 +27,9 @@ export default function Calendar({ months, values, z }: Props) {
   })
   const sel = months[monthIdx] ? ym(months[monthIdx]) : null
 
+  const animate = useAnimateOnChange([values])
   const option = {
+    animation: animate,
     animationDuration: 300,
     grid: { left: 44, right: 8, top: 22, bottom: 8 },
     tooltip: {

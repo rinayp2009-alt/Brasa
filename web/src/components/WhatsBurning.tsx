@@ -2,6 +2,7 @@ import ReactECharts from 'echarts-for-react'
 import { LAND, MONTH_NAMES, fmt, ym } from '../data'
 import type { RegionSeries } from '../data'
 import InfoTip from './InfoTip'
+import { useAnimateOnChange } from '../useAnimateOnChange'
 import { useT } from '../i18n'
 
 interface Props {
@@ -29,7 +30,9 @@ export default function WhatsBurning({ months, series, monthIdx, regionName }: P
   })
   const yearTot = years.map((_, i) => byYear.crop[i] + byYear.forest[i] + byYear.grass[i] || 1)
 
+  const animate = useAnimateOnChange([series])
   const option = {
+    animation: animate,
     grid: { left: 36, right: 8, top: 10, bottom: 24 },
     tooltip: {
       trigger: 'axis', backgroundColor: '#0B0D10', borderColor: '#232832',

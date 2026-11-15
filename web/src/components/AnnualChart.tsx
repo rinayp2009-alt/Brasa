@@ -2,6 +2,7 @@ import ReactECharts from 'echarts-for-react'
 import type { Mode } from '../data'
 import { fmt, ym } from '../data'
 import { useStore } from '../store'
+import { useAnimateOnChange } from '../useAnimateOnChange'
 
 interface Props {
   months: string[]
@@ -61,7 +62,9 @@ export default function AnnualChart({ months, modis, naive, harm, lo, hi, mode }
     label: { position: 'insideEndTop', fontFamily: 'IBM Plex Mono', fontSize: 10 }, data: marks,
   }
 
+  const animate = useAnimateOnChange([harm, mode])
   const option = {
+    animation: animate,
     animationDurationUpdate: 500,
     grid: { left: 52, right: 10, top: 18, bottom: 26 },
     tooltip: {
